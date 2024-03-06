@@ -1,0 +1,5 @@
+# shellcheck shell=bash
+
+function test::hello_world() {
+    echo "Hello World"
+}

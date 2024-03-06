@@ -1,0 +1,77 @@
+#!/usr/bin/env bash
+set -e
+
+# include
+# Usage: include <package> <function>
+# Description: Attempts to include a function from a specified package.
+# If the function is not already included, it checks if the function file exists locally.
+# If not, it tries to pull the package using Docker if Docker is available.
+# After pulling, if the function file still doesn't exist, it prints an error.
+# If the file exists, it marks the function as included and preprocesses the file.
+function include() {
+  local package=$1
+  local function=$2
+  local include="${package}/${function}"
+
+  if [[ -n "${INCLUDED[$include]}" ]]; then
+    return 0
+  fi
+
+  local path="$INCLUDE_DIR/$include"
+
+  if [[ ! -f "$path" ]] && command -v docker &>/dev/null; then
+    if docker manifest inspect "ghcr.io/lf-certification/bashp-$package:latest" &>/dev/null; then
+      id=$(docker create "ghcr.io/lf-certification/bashp-$package:latest" none)
+      docker cp "$id:/$package" "$INCLUDE_DIR/$package"
+      docker rm "$id"
+    fi
+  fi
+    
+  if [[ ! -f "$path" ]]; then
+    echo "bashpp: failed to include $include" >&2
+    return 1
+  fi
+
+  INCLUDED[$include]=1
+  preprocess "$path"
+}
+
+# preprocess
+# Usage: preprocess <file>
+# Description: Reads a file line by line and processes it.
+# It looks for lines indicating a function to include (either with :: or #include directive).
+# For each such line, it attempts to include the specified function.
+# It echoes each line back out, allowing for preprocessing of files.
+function preprocess() {
+  local file=$1
+
+  local line
+  while IFS= read -r line; do
+    case "$line" in
+      *::*)
+        if [[ "$line" =~ ([a-zA-Z0-9_]+)::([a-zA-Z0-9_]+) ]]; then
+          local package="${BASH_REMATCH[1]}"
+          local function="${BASH_REMATCH[2]}"
+          include "$package" "$function"
+        fi
+        echo "$line"
+      ;;
+      "#include "*)
+        local include=${line#*#include }
+        local package=${include%%/*}
+        local function=${include#*/}
+        include "$package" "$function"
+        echo "$line"
+      ;;
+      *) echo "$line" ;;
+    esac
+  done < "$file"
+
+  if [[ "$line" != "" ]]; then echo ""; fi
+}
+
+declare -A INCLUDED=()
+INCLUDE_DIR=${INCLUDE_DIR:-libs}
+mkdir -p "$INCLUDE_DIR"
+
+preprocess "${1:-/dev/stdin}"
