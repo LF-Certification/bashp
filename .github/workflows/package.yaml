@@ -12,8 +12,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     strategy:
-      matrix:
-        include: ${{fromJson(needs.setup.outputs.matrix)}}
+      matrix: ${{fromJson(needs.setup.outputs.matrix)}}
     needs: [setup]
     steps:
       - name: Checkout code
