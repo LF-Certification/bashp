@@ -16,17 +16,17 @@ jobs:
     needs: [setup]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Login to GitHub Container Registry
-        uses: docker/login-action@v1
+        uses: docker/login-action@v2
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3
         with:
           context: ./libs/${{ matrix.directory }}
           file: ./libs/Dockerfile
@@ -40,7 +40,7 @@ jobs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: List all directories in libs and create matrix
         id: set-matrix
@@ -49,5 +49,7 @@ jobs:
           DIRS="${DIRS//libs\//}" # Remove 'libs/' prefix
           DIRS="${DIRS//\//}" # Remove trailing slashes
           JSON=$(echo $DIRS | jq -R -s -c 'split("\n")[:-1] | map({directory: .})')
-          echo "::set-output name=matrix::$JSON"
+          echo "$JSON" > $GITHUB_OUTPUT
         shell: bash
+        env:
+          GITHUB_OUTPUT: ${{ github.output }}
