@@ -1,6 +1,7 @@
 name: Build and Push Package Images
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
@@ -51,5 +52,3 @@ jobs:
           JSON=$(echo $DIRS | jq -R -s -c 'split("\n")[:-1] | map({directory: .})')
           echo "$JSON" > $GITHUB_OUTPUT
         shell: bash
-        env:
-          GITHUB_OUTPUT: ${{ github.output }}
