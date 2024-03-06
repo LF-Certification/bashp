@@ -31,6 +31,28 @@ Use the `bashp` command to run your script, which will automatically preprocess 
 bashp yourscript.sh
 ```
 
+### Quickstart Example
+
+Here's a simple [example](hello-world.sh) to get you started with Bash+:
+
+```shell
+#!./bashp
+# shellcheck shell=bash
+
+# Option 1
+# Include (once) using the "#include" directive
+
+#include test/hello
+test::hello
+
+# Option 2
+# Rely on auto-include based on naming-convention "<package>::<function>"
+
+test::hello_world
+```
+
+This script demonstrates two ways to include and use functions from external libraries or packages in your Bash+ scripts.
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit pull requests, open issues, or suggest new
