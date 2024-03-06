@@ -29,11 +29,11 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v3
         with:
-          context: ./libs/${{ matrix.directory }}
+          context: ./libs
           file: ./libs/Dockerfile
-          build-args: PACKAGE=${{ matrix.directory }}
+          build-args: PACKAGE=${{ matrix.item }}
           push: true
-          tags: ghcr.io/lf-certification/bashp-${{ matrix.directory }}:latest
+          tags: ghcr.io/lf-certification/bashp-${{ matrix.item }}:latest
 
   setup:
     runs-on: ubuntu-latest
@@ -46,9 +46,14 @@ jobs:
       - name: List all directories in libs and create matrix
         id: set-matrix
         run: |
-          DIRS=$(ls -d libs/*/)
-          DIRS="${DIRS//libs\//}" # Remove 'libs/' prefix
-          DIRS="${DIRS//\//}" # Remove trailing slashes
-          JSON=$(echo $DIRS | jq -R -s -c 'split("\n")[:-1] | map({directory: .})')
-          echo "matrix=$JSON" >> $GITHUB_ENV
+          json=$(
+            (
+              for directory in $(find libs/ -mindepth 1 -type d); do
+                echo -n '"'"${directory#*/}"'",'
+              done
+              echo '""'
+            ) | sed -E 's/,?""$//'
+          )
+
+          echo "matrix={\"item\":[$json]}" >> $GITHUB_OUTPUT
         shell: bash
