@@ -120,7 +120,6 @@ function preprocess() {
         local package=${include%%/*}
         local function=${include#*/}
         include "$package" "$function"
-        echo "$line"
       ;;
       *) echo "$line" ;;
     esac
@@ -136,4 +135,4 @@ BASHP_INCLUDE_DIRS=${BASHP_INCLUDE_DIRS:-${INCLUDE_DIR:-libs}}
 BASHP_INCLUDE_REPOS=${BASHP_INCLUDE_REPOS:-ghcr.io/lf-certification}
 mkdir -p "$INCLUDE_DIR"
 
-preprocess "${1:-/dev/stdin}"
+preprocess "${1:-/dev/stdin}" $file
