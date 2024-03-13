@@ -1,47 +1,106 @@
 #!/usr/bin/env bash
 set -e
 
+# bashpp
+# A preprocessor for Bash scripts with support for including external functions.
+#
+# Description:
+#   bashpp is a Bash script preprocessor that allows for the inclusion of external functions into
+#   Bash scripts. It supports including functions from local directories specified by
+#   $BASHP_INCLUDE_DIRS or from Docker repositories listed in $BASHP_INCLUDE_REPOS. This enables
+#   modular script development by allowing scripts to dynamically include and use functions from
+#   external packages. The script processes input files line by line, identifying and handling
+#   include directives for external functions. If a function is not already included, bashpp
+#   attempts to find it locally or pull it from a Docker repository. Each included function is then
+#   preprocessed for further include directives.
+#
+# Usage:
+#   bashpp [file]
+#
+# Parameters:
+#   file - The path to the Bash script file to be preprocessed. If not specified, bashpp reads from
+#          /dev/stdin.
+#
+# Environment Variables:
+#   BASHP_INCLUDE_DIRS - Colon-separated list of directories to search for functions. If not set,
+#                        defaults to the value of $INCLUDE_DIR or 'libs' if $INCLUDE_DIR is also
+#                        unset.
+#   BASHP_INCLUDE_REPOS - Colon-separated list of Docker repositories to search for functions.
+#                         Defaults to 'ghcr.io/lf-certification' if unset.
+#   INCLUDE_DIR - Directory to search for functions. Used if BASHP_INCLUDE_DIRS is not set.
+#
+# Dependencies:
+#   - Docker must be installed and available in the PATH if external functions are to be pulled 
+#     from Docker repositories.
+#
+# Notes:
+#   - Functions to be included should be placed in directories or Docker repositories following the
+#     structure <package>/<function>, where <package> is the name of the package containing the
+#     function, and <function> is the name of the function file.
+#   - The script sets the 'set -e' option to exit immediately if a command exits with a non-zero
+#     status, ensuring that errors in function inclusion or preprocessing are not silently ignored.
+
 # include
-# Usage: include <package> <function>
-# Description: Attempts to include a function from a specified package.
-# If the function is not already included, it checks if the function file exists locally.
-# If not, it tries to pull the package using Docker if Docker is available.
-# After pulling, if the function file still doesn't exist, it prints an error.
-# If the file exists, it marks the function as included and preprocesses the file.
+# Attempts to include a specified function from a given package.
+#
+# Usage:
+#   include <package> <function>
+#
+# Parameters:
+#   package - The name of the package containing the function.
+#   function - The name of the function to include.
+#
+# Description:
+#   This function checks if the specified function is already included. If not, it searches for the
+#   function file within directories specified by $BASHP_INCLUDE_DIRS. Failing to find the file locally,
+#   it attempts to pull the package using Docker from repositories listed in $BASHP_INCLUDE_REPOS
+#   (defaults to ghcr.io/lf-certification if unset). If the function file is still missing after
+#   the pull attempt, an error is printed. Otherwise, the function is marked as included and its
+#   file is sent for preprocessing.
 function include() {
   local package=$1
   local function=$2
   local include="${package}/${function}"
 
-  if [[ -n "${INCLUDED[$include]}" ]]; then
-    return 0
-  fi
+  [[ -n "${INCLUDED[$include]}" ]] && return 0
 
-  local path="$INCLUDE_DIR/$include"
+  local path
+  IFS=:; for directory in $BASHP_INCLUDE_DIRS; do
+    path="$directory/$include"
+    [[ -f "$path" ]] && break
+  done
 
   if [[ ! -f "$path" ]] && command -v docker &>/dev/null; then
-    if docker manifest inspect "ghcr.io/lf-certification/bashp-$package:latest" &>/dev/null; then
-      id=$(docker create "ghcr.io/lf-certification/bashp-$package:latest" none)
-      docker cp "$id:/$package" "$INCLUDE_DIR/$package"
-      docker rm "$id"
-    fi
+    IFS=:; for repository in $BASHP_INCLUDE_REPOS; do
+      if docker manifest inspect "$repository/bashp-$package:latest" &>/dev/null; then
+        id=$(docker create "$repository/bashp-$package:latest" none)
+        docker cp "$id:/$package" "$INCLUDE_DIR/$package"
+        docker rm "$id"
+        break
+      fi
+    done
   fi
-    
-  if [[ ! -f "$path" ]]; then
-    echo "bashpp: failed to include $include" >&2
-    return 1
-  fi
+
+  [[ ! -f "$path" ]] && echo "bashpp: failed to include $include" >&2 && return 1
 
   INCLUDED[$include]=1
   preprocess "$path"
 }
 
 # preprocess
-# Usage: preprocess <file>
-# Description: Reads a file line by line and processes it.
-# It looks for lines indicating a function to include (either with :: or #include directive).
-# For each such line, it attempts to include the specified function.
-# It echoes each line back out, allowing for preprocessing of files.
+# Processes a given file line by line.
+#
+# Usage:
+#   preprocess <file>
+#
+# Parameters:
+#   file - The path to the file to be processed.
+#
+# Description:
+#   This function reads the specified file line by line. For lines that contain a "::" or
+#   "#include" directive, it calls the include function to handle the specified function. Each line
+#   is echoed back, with modifications applied to lines containing directives for function
+#   inclusion.
 function preprocess() {
   local file=$1
 
@@ -70,8 +129,11 @@ function preprocess() {
   if [[ "$line" != "" ]]; then echo ""; fi
 }
 
+
+
 declare -A INCLUDED=()
-INCLUDE_DIR=${INCLUDE_DIR:-libs}
+BASHP_INCLUDE_DIRS=${BASHP_INCLUDE_DIRS:-${INCLUDE_DIR:-libs}}
+BASHP_INCLUDE_REPOS=${BASHP_INCLUDE_REPOS:-ghcr.io/lf-certification}
 mkdir -p "$INCLUDE_DIR"
 
 preprocess "${1:-/dev/stdin}"

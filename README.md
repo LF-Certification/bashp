@@ -16,7 +16,8 @@ functionalities with ease.
 - **Enhanced Scripting Capabilities**: Make your Bash scripts more powerful and maintainable with
   advanced features.
 - **Preprocessing**: A preprocessing step that allows for dynamic inclusion of scripts and
-  packages.
+  packages. Supports including functions from local directories or Docker repositories, enhancing
+  modularity and ease of use.
 
 ## Getting Started
 
