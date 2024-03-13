@@ -1,0 +1,44 @@
+# shellcheck shell=bash
+
+# file::is_world_accessible
+# Checks if a file or directory is world-readable and executable.
+#
+# Description:
+#   This function checks if the specified file or directory, and all its parent directories up to
+#   '/', are world-readable and executable. It is particularly useful for verifying if a file or
+#   directory can be accessed by any user on the system. For files, it checks if the file is
+#   world-readable. For directories, it checks if they are world-readable and executable. It
+#   iteratively performs these checks up the directory tree to ensure full path accessibility.
+#
+# Usage:
+#   file::is_world_accessible <path>
+#
+# Parameters:
+#   path - The path to the file or directory to check.
+#
+# Returns:
+#   Exits with status 0 (true) if the file or directory and all parent directories are 
+#   world-readable and executable. Exits with status 1 if a file is not world-readable, or with
+#   status 2 if a directory (or any parent directory) is not world-readable and executable.
+function file::is_world_accessible() {
+    local path="$1"
+
+    local mode
+    if [[ ! -d "$path" ]]; then
+      mode=$(stat -c "%a" "$path")
+      if ! ((mode & 004)); then
+        return 1
+      fi
+
+      path=$(dirname "$path")
+    fi
+
+    while [ "$path" != "/" ]; do
+        mode=$(stat -c "%a" "$path")
+        if ! ((mode & 005)); then
+            return 2
+        fi
+
+        path=$(dirname "$path")
+    done
+}
