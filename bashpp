@@ -44,11 +44,11 @@ set -e
 # Attempts to include a specified function from a given package.
 #
 # Usage:
-#   include <package> <function>
+#   include <package>/<function>
 #
 # Parameters:
-#   package - The name of the package containing the function.
-#   function - The name of the function to include.
+#   package/function - The combined name of the package and function to include, formatted as
+#                      "<package>/<function>".
 #
 # Description:
 #   This function checks if the specified function is already included. If not, it searches for the
@@ -58,11 +58,8 @@ set -e
 #   the pull attempt, an error is printed. Otherwise, the function is marked as included and its
 #   file is sent for preprocessing.
 function include() {
-  local package=$1
-  local function=$2
-  local include="${package}/${function}"
-
-  [[ -n "${INCLUDED[$include]}" ]] && return 0
+  local include=$1
+  local package=${include%%/*}
 
   local path
   IFS=:; for directory in $BASHP_INCLUDE_DIRS; do
@@ -84,8 +81,34 @@ function include() {
 
   [[ ! -f "$path" ]] && echo "bashpp: failed to include $include" >&2 && return 1
 
-  INCLUDED[$include]=1
   preprocess "$path"
+}
+
+# include_once
+# Ensures a function is included only once.
+#
+# Usage:
+#   include_once <package>/<function>
+#
+# Parameters:
+#   package/function - The combined name of the package and function to include, formatted as
+#                      "<package>/<function>".
+#
+# Description:
+#   This function checks if the specified function, identified by a combination of its package and
+#   function name, has already been included. If it has not been included, it marks the function as
+#   included and then calls the 'include' function to include the function from either local
+#   directories specified by $BASHP_INCLUDE_DIRS or Docker repositories listed in $BASHP_INCLUDE_REPOS.
+#   This prevents multiple inclusions of the same function, ensuring that each function is included
+#   only once, thereby avoiding redundancy and potential conflicts.
+declare -A INCLUDED=()
+function include_once() {
+  local include=$1
+
+  if [[ -z "${INCLUDED[$include]}" ]]; then
+    INCLUDED[$include]=1
+    include $include
+  fi
 }
 
 # preprocess
@@ -112,15 +135,14 @@ function preprocess() {
         if [[ "$line" =~ ([a-zA-Z0-9_]+)::([a-zA-Z0-9_]+) ]]; then
           local package="${BASH_REMATCH[1]}"
           local function="${BASH_REMATCH[2]}"
-          include "$package" "$function"
+          local include="${package}/${function}"
+          include_once $include
         fi
         echo "$line"
       ;;
       "#include "*)
         local include=${line#*#include }
-        local package=${include%%/*}
-        local function=${include#*/}
-        include "$package" "$function"
+        include_once $include
       ;;
       *) echo "$line" ;;
     esac
@@ -129,9 +151,6 @@ function preprocess() {
   if [[ "$line" != "" ]]; then echo ""; fi
 }
 
-
-
-declare -A INCLUDED=()
 INCLUDE_DIR=${INCLUDE_DIR:-libs}
 BASHP_INCLUDE_DIRS=${BASHP_INCLUDE_DIRS:-$INCLUDE_DIR}
 BASHP_INCLUDE_REPOS=${BASHP_INCLUDE_REPOS:-ghcr.io/lf-certification}
