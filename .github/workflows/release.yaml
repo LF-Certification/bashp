@@ -12,42 +12,13 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: "marvinpinto/action-automatic-releases@latest"
         with:
-          tag_name: ${{ github.ref }}
-          release_name: ${{ github.ref }}
-          draft: false
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: ${{ github.ref }}
           prerelease: false
-
-      - name: Upload Release Asset bashp
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./bashp
-          asset_name: bashp
-          asset_content_type: application/octet-stream
-
-      - name: Upload Release Asset bashpc
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./bashpc
-          asset_name: bashpc
-          asset_content_type: application/octet-stream
-
-      - name: Upload Release Asset bashpp
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./bashpp
-          asset_name: bashpp
-          asset_content_type: application/octet-stream
+          title: ${{ github.ref }}
+          files: |
+            bashp
+            bashpc
+            bashpp
