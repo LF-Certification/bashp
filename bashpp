@@ -74,7 +74,8 @@ function include() {
     IFS=:; for repository in $BASHP_INCLUDE_REPOS; do
       if docker manifest inspect "$repository/bashp-$package:latest" &>/dev/null; then
         id=$(docker create "$repository/bashp-$package:latest" none)
-        docker cp "$id:/$package" "$INCLUDE_DIR/$package"
+        mkdir -p "$INCLUDE_DIR/$package"
+        docker cp "$id:/$include" "$INCLUDE_DIR/$include"
         docker rm "$id"
         break
       fi
