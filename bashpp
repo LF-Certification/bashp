@@ -56,7 +56,9 @@ set -e
 #   it attempts to pull the package using Docker from repositories listed in $BASHP_INCLUDE_REPOS
 #   (defaults to ghcr.io/lf-certification if unset). If the function file is still missing after
 #   the pull attempt, an error is printed. Otherwise, the function is marked as included and its
-#   file is sent for preprocessing.
+#   file is sent for preprocessing. Additionally, if the function is pulled from an OCI registry
+#   and Git is available, the function's name is added to a `.gitignore` file within the package
+#   directory to prevent it from being accidentally committed to version control.
 function include() {
   local include=$1
   local package=${include%%/*}
