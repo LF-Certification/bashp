@@ -61,7 +61,6 @@ set -e
 #   directory to prevent it from being accidentally committed to version control.
 function include() {
   local include=$1
-  local package=${include%%/*}
 
   local path
   IFS=:; for directory in $BASHP_INCLUDE_DIRS; do
@@ -70,9 +69,13 @@ function include() {
   done
 
   if [[ ! -f "$path" ]] && command -v docker &>/dev/null; then
+    local repository
     IFS=:; for repository in $BASHP_INCLUDE_REPOS; do
-      if docker manifest inspect "$repository/bashp-$package:latest" &>/dev/null; then
-        id=$(docker create "$repository/bashp-$package:latest" none)
+      local package=${include%%/*}
+      local image="$repository/bashp-$package:latest"
+      if docker manifest inspect "$image" &>/dev/null; then
+        local id
+        id=$(docker create "$image" none)
         mkdir -p "$INCLUDE_DIR/$package"
         docker cp "$id:/$include" "$INCLUDE_DIR/$include"
         docker rm "$id"
@@ -142,16 +145,12 @@ function preprocess() {
     case "$line" in
       *::*)
         if [[ "$line" =~ ([a-zA-Z0-9_]+)::([a-zA-Z0-9_]+) ]]; then
-          local package="${BASH_REMATCH[1]}"
-          local function="${BASH_REMATCH[2]}"
-          local include="${package}/${function}"
-          include_once "$include"
+          include_once "${BASH_REMATCH[1]}/${BASH_REMATCH[2]}"
         fi
         echo "$line"
       ;;
       "#include "*)
-        local include=${line#*#include }
-        include_once "$include"
+        include_once ${line#*#include }
       ;;
       *) echo "$line" ;;
     esac
