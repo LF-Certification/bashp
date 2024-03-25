@@ -26,6 +26,16 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Create temporary Dockerfile
+        run: |
+          cat >libs/Dockerfile <<'EOF'
+          FROM scratch
+          LABEL org.opencontainers.image.source https://github.com/${{ github.repository }}
+          
+          ARG PACKAGE
+          COPY ${PACKAGE}/* /${PACKAGE}/
+          EOT
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
