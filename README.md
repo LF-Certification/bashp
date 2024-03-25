@@ -18,11 +18,15 @@ functionalities with ease.
 - **Preprocessing**: A preprocessing step that allows for dynamic inclusion of scripts and
   packages. Supports including functions from local directories or Docker repositories, enhancing
   modularity and ease of use.
+- **Git Integration**: Automatically adds included functions to `.gitignore` when pulling from OCI
+  registries, preventing unintended commits of external functions.
 
 ## Getting Started
 
 To get started with Bash+, clone this repository and ensure you have Docker installed, as it's
-required for fetching some of the packages.
+required for fetching some of the packages. Ensure Git is configured correctly if you're using
+Bash+ in a Git-managed project. Bash+ intelligently adds dynamically included functions to
+`.gitignore`, keeping your repository clean.
 
 ### Usage
 
