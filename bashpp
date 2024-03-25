@@ -107,7 +107,7 @@ function include_once() {
 
   if [[ -z "${INCLUDED[$include]}" ]]; then
     INCLUDED[$include]=1
-    include $include
+    include "$include"
   fi
 }
 
@@ -136,13 +136,13 @@ function preprocess() {
           local package="${BASH_REMATCH[1]}"
           local function="${BASH_REMATCH[2]}"
           local include="${package}/${function}"
-          include_once $include
+          include_once "$include"
         fi
         echo "$line"
       ;;
       "#include "*)
         local include=${line#*#include }
-        include_once $include
+        include_once "$include"
       ;;
       *) echo "$line" ;;
     esac
@@ -156,4 +156,4 @@ BASHP_INCLUDE_DIRS=${BASHP_INCLUDE_DIRS:-$INCLUDE_DIR}
 BASHP_INCLUDE_REPOS=${BASHP_INCLUDE_REPOS:-ghcr.io/lf-certification}
 mkdir -p "$INCLUDE_DIR"
 
-preprocess "${1:-/dev/stdin}" $file
+preprocess "${1:-/dev/stdin}" "$file"
