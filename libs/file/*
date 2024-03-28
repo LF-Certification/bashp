@@ -2,3 +2,5 @@
 
 #include file/is_world_accessible
 #include file/is_world_executable
+#include file/is_world_readable
+#include file/is_world_writable

@@ -4,9 +4,8 @@
 # Checks if a file is world-executable.
 #
 # Description:
-#   This function determines if the specified file has world-executable permissions. It uses the
-#   `stat` command to retrieve the file's mode (permissions) and checks if the world-executable
-#   bit is set.
+#   This function checks if the specified file has world-executable permissions using the
+#   `find` command with the `-perm` option to check if the world-executable bit is set.
 #
 # Usage:
 #   file::is_world_executable <path>
@@ -19,7 +18,5 @@
 #   status (false).
 function file::is_world_executable() {
     local path="$1"
-    local mode
-    mode=$(stat -c "%a" "$path")
-    ((mode & 005))
+    [[ -n $(find "$path" -perm -005) ]]
 }

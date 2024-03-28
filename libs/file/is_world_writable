@@ -1,0 +1,22 @@
+# shellcheck shell=bash
+
+# file::is_world_writable
+# Checks if a file is world-writable.
+#
+# Description:
+#   This function checks if the specified file has world-writable permissions using the
+#   `find` command with the `-perm` option to check if the world-writable bit is set.
+#
+# Usage:
+#   file::is_world_writable <path>
+#
+# Parameters:
+#   path - The path to the file to check.
+#
+# Returns:
+#   Exits with status 0 (true) if the file is world-writable, otherwise exits with a non-zero
+#   status (false).
+function file::is_world_writable() {
+    local path="$1"
+    [[ -n $(find "$path" -perm -002) ]]
+}

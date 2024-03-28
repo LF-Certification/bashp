@@ -23,10 +23,9 @@
 function file::is_world_accessible() {
     local path="$1"
 
-    local mode
     if [[ ! -d "$path" ]]; then
       mode=$(stat -c "%a" "$path")
-      if ! ((mode & 004)); then
+      if file::is_world_readable "$path"; then
         return 1
       fi
 
@@ -35,7 +34,7 @@ function file::is_world_accessible() {
 
     while [ "$path" != "/" ]; do
         mode=$(stat -c "%a" "$path")
-        if ! ((mode & 005)); then
+        if ! file::is_world_executable "$path"; then
             return 2
         fi
 
