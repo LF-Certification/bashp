@@ -1,0 +1,38 @@
+# shellcheck shell=bash
+
+# file::copy_owners
+# Copies the owner and group permissions from a source file or directory to a destination.
+#
+# Description:
+#   This function uses the 'stat' command to retrieve the user and group ownership of a source file
+#   or directory and applies the same ownership to the destination file or directory using the
+#   'chown' command. It supports an optional recursive operation to apply ownership changes to all
+#   files and directories within the source if it is a directory.
+#
+# Usage:
+#   file::copy_owners <source> <destination> [recursive]
+#
+# Parameters:
+#   source: The source file or directory whose ownership is to be copied.
+#   destination: The destination file or directory where the ownership will be applied.
+#   recursive: Optional. If set to 'true', the ownership change will be applied recursively.
+#              Default is 'false'.
+#
+# Outputs:
+#   None. Changes are applied directly to the filesystem.
+#
+# Note:
+#   This function requires that the 'stat' and 'chown' commands are available in the environment
+#   where the script is run. Additionally, it requires sudo privileges to change ownership, which
+#   means the user must have the appropriate permissions to execute sudo commands.
+function file::copy_owners() {
+  local source=${1:?st argument (source) must be set}
+  local destination=${2:?nd argument (destination) must be set}
+  local recursive=${3:-false}
+
+  local user; user=$(stat -c '%U' "$source")
+  local group; group=$(stat -c '%G' "$source")
+
+  [[ "$recursive" == "true" ]] && local options="-R"
+  sudo chown "${options:-}" "$user:$group" "$destination"
+}

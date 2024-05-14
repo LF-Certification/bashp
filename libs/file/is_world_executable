@@ -17,6 +17,6 @@
 #   Exits with status 0 (true) if the file is world-executable, otherwise exits with a non-zero
 #   status (false).
 function file::is_world_executable() {
-    local path="$1"
+    local path=${1:?st argument (path) must be set}
     [[ -n $(find "$path" -perm -005) ]]
 }

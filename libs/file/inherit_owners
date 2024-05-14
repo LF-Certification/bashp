@@ -1,0 +1,27 @@
+# shellcheck shell=bash
+
+# file::inherit_owners
+# Inherits ownership from the parent directory to the specified path.
+#
+# Description:
+#   This function sets the owner and group of the specified path to match its parent directory.
+#   It is useful for ensuring that files or directories created within a certain directory inherit
+#   the ownership properties of their parent directory, maintaining consistent permissions and
+#   ownership across directory structures.
+#
+# Usage:
+#   file::inherit_owners <path>
+#
+# Parameters:
+#   path - The file or directory path whose ownership should be set to match its parent directory.
+#
+# Outputs:
+#   None.
+#
+# Note:
+#   This function relies on the 'file::copy_owners' function to perform the actual ownership copying.
+function file::inherit_owners() {
+  local path=${1:?st argument (path) must be set}
+
+  file::copy_owners "$(dirname "$path")" "$path" true
+}

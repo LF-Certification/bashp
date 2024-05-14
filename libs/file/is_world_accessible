@@ -21,7 +21,7 @@
 #   world-readable and executable. Exits with status 1 if a file is not world-readable, or with
 #   status 2 if a directory (or any parent directory) is not world-readable and executable.
 function file::is_world_accessible() {
-    local path="$1"
+    local path=${1:?st argument (path) must be set}
 
     if [[ ! -d "$path" ]]; then
       mode=$(stat -c "%a" "$path")

@@ -1,5 +1,7 @@
 # shellcheck shell=bash
 
+#include file/copy_owners
+#include file/inherit_owners
 #include file/is_world_accessible
 #include file/is_world_executable
 #include file/is_world_readable
