@@ -1,0 +1,33 @@
+# shellcheck shell=bash
+
+# kubectl::apply
+# Applies a Kubernetes manifest from STDIN and saves it to a specified file.
+#
+# Description:
+#   This function reads a Kubernetes manifest from standard input, saves it to the specified file
+#   path, and then applies the manifest using 'kubectl apply -f -'. It ensures that the file
+#   ownership matches that of the parent directory of the provided path using the
+#   file::inherit_owners function.
+#
+# Usage:
+#   kubectl::apply <path>
+#
+# Parameters:
+#   path - The file path where the Kubernetes configuration from stdin will be saved and then
+#          applied.
+#
+# Outputs:
+#   Outputs the result of the 'kubectl apply' command to stdout. The Kubernetes manifest is also
+#   written to the specified file path.
+#
+# Note:
+#   This function requires that the input path is provided and will exit with an error if it is
+#   not.
+#   The Kubernetes manifest must be piped into this function for it to be applied.
+function kubectl::apply() {
+  local path=${1:?st argument (path) must be set}
+
+  tee --output-error=exit "$path" </dev/stdin | kubectl apply -f -
+
+  file::inherit_owners "$path"
+}
