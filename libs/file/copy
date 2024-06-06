@@ -1,0 +1,41 @@
+# shellcheck shell=bash
+
+# file::copy
+# Copies files or directories from a source to a destination and inherits ownership.
+#
+# Description:
+#   This function copies files or directories from a specified source to a destination.
+#   After copying, it ensures that the copied items inherit the ownership properties
+#   of their new parent directory using the 'file::inherit_owners' function.
+#
+# Usage:
+#   file::copy <source> <destination> [additional cp arguments]
+#
+# Parameters:
+#   source - The source path from which files or directories are copied.
+#   destination - The destination path to which files or directories are copied.
+#   additional cp arguments - Optional additional arguments that are passed directly to the 'cp'
+#                             command.
+#
+# Outputs:
+#   Outputs of the 'cp' command showing what was copied, followed by the inheritance of ownership
+#   to the new files.
+#
+# Example:
+#   file::copy /path/to/source /path/to/destination -r
+#
+# Note:
+#   This function uses 'cp' command for copying and handles complex scenarios where additional arguments might be needed.
+#   It parses the output of 'cp' to apply ownership settings correctly.
+function file::copy() {
+  local source=${1:-${source:?must be set}}
+  local destination=${2:-${destination:?must be set}}
+  shift 2
+  local arguments=$*
+
+  # shellcheck disable=SC2086
+  while read -r file; do
+    file::inherit_owners "$file"
+  done <<<"$(cp $arguments -v "$source" "$destination" | awk -F " -> " '{print $2}' | cut -d"'" -f2)"
+}
+
