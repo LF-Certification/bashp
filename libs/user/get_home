@@ -1,0 +1,27 @@
+# shellcheck shell=bash
+
+# user::get_home
+# Retrieves the home directory of a specified user.
+#
+# Description:
+#   This function fetches the home directory of the user specified by the username argument.
+#   If no username is provided, it defaults to the current user. This is useful for scripts
+#   that need to access user-specific files or directories.
+#
+# Usage:
+#   user::get_home <username>
+#
+# Parameters:
+#   username - The username whose home directory is to be retrieved. Optional, defaults to the
+#              current user.
+#
+# Outputs:
+#   The home directory of the specified or default user.
+#
+# Example:
+#   user::get_home "exampleUser"  # Outputs the home directory of 'exampleUser'
+#   user::get_home                # Outputs the home directory of the current user
+function user::get_home() {
+  local username=${1:-${user:-$(whoami)}}
+  getent passwd "$username" | cut -d: -f6
+}

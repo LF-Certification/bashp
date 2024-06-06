@@ -1,0 +1,26 @@
+# shellcheck shell=bash
+
+# user::get_gid
+# Retrieves the group ID (GID) of a specified user.
+#
+# Description:
+#   This function fetches the group ID (GID) of the user specified by the username argument.
+#   If no username is provided, it defaults to the current user. This is useful for scripts
+#   that need to handle permissions or group-related operations based on user GID.
+#
+# Usage:
+#   user::get_gid <username>
+#
+# Parameters:
+#   username - The username whose GID is to be retrieved. Optional, defaults to the current user.
+#
+# Outputs:
+#   The group ID of the specified or default user.
+#
+# Example:
+#   user::get_gid "exampleUser"  # Outputs the GID of 'exampleUser'
+#   user::get_gid               # Outputs the GID of the current user
+function user::get_gid() {
+  local username=${1:-${user:-$(whoami)}}
+  getent passwd "$username" | cut -d: -f4
+}
