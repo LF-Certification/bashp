@@ -1,0 +1,37 @@
+# shellcheck shell=bash
+
+# docker::exec
+# Executes a command or script in a running Docker container.
+#
+# Description:
+#   This function allows the execution of a bash shell or multiline command/script within a
+#   specified Docker container. It is particularly useful for interactive debugging or running
+#   complex scripts directly within the container's environment.
+#   The function supports enabling bash's xtrace option if it is set in the calling environment,
+#   which aids in debugging by showing commands as they are executed.
+#   Commands or scripts are read from standard input, making it convenient to execute multiple
+#   commands or entire scripts interactively or passed from a script.
+#
+# Usage:
+#   echo "command_to_run" | docker::exec <container_name>
+#   cat script.sh | docker::exec <container_name>
+#
+# Parameters:
+#   container_name - The name or ID of the Docker container in which the command or script will be executed.
+#
+# Outputs:
+#   Outputs of the executed commands or scripts.
+#
+# Note:
+#   The function checks if the xtrace option is enabled and passes the '-x' argument to bash if true.
+#   This allows for detailed command tracing when debugging complex operations within the container.
+function docker::exec() {
+  local name=${1:-${name:?must be set}}
+  
+  local arguments
+  if shopt -oq xtrace; then
+    arguments=-x
+  fi
+
+  sudo docker exec -i "$name" bash $arguments </dev/stdin
+}
