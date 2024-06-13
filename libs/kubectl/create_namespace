@@ -1,0 +1,29 @@
+# shellcheck shell=bash
+
+# kubectl::create_namespace
+# Creates a Kubernetes namespace if it does not already exist.
+#
+# Description:
+#   This function creates a Kubernetes namespace with the specified name. If no name is provided,
+#   it defaults to 'default'. It uses the '--dry-run=client' option to generate the namespace
+#   definition and then applies it using 'kubectl apply', effectively ensuring the namespace is
+#   created only if it does not already exist.
+#
+# Usage:
+#   kubectl::create_namespace <name>
+#
+# Parameters:
+#   name - The name of the namespace to create. Defaults to 'default' if not specified.
+#
+# Outputs:
+#   Outputs the result of the 'kubectl apply' command to stdout. This includes the namespace
+#   creation status.
+#
+# Note:
+#   The speciality of this function is its ability to "create if not exists" for namespaces,
+#   preventing errors that occur when attempting to create a namespace that already exists.
+function kubectl::create_namespace() {
+  local name=${1:-${name:-default}}
+  
+  kubectl create namespace "$name" --dry-run=client -o yaml | kubectl apply -f -
+}
