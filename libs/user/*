@@ -1,6 +1,7 @@
 # shellcheck shell=bash
 
 #include user/get_gid
+#include user/get_groups
 #include user/get_home
 #include user/get_shell
 #include user/get_uid
