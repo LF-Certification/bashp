@@ -1,3 +1,4 @@
 # shellcheck shell=bash
 
 #include kubectl/apply
+#include kubectl/create_namespace
