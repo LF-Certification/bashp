@@ -144,9 +144,9 @@ function preprocess() {
   while IFS= read -r line; do
     case "$line" in
       *::*)
-        if [[ "$line" =~ ([a-zA-Z0-9_]+)::([a-zA-Z0-9_]+) ]]; then
-          include_once "${BASH_REMATCH[1]}/${BASH_REMATCH[2]}"
-        fi
+        local include
+        grep -Eo '[a-zA-Z0-9_]+::[a-zA-Z0-9_]+' <<< "$line" |
+        	while read include; do include_once ${include//::/\/}; done
         echo "$line"
       ;;
       "#include "*)
