@@ -13,15 +13,16 @@ functionalities with ease.
 
 - **Modular Design**: Easily include and manage external libraries and packages in your Bash
   scripts.
-- **Package Management**: Leverage reusable components and packages, potentially hosted in external
-  repositories or available as Docker images.
+- **Package Management**: Leverage reusable components and packages from multiple sources:
+  - OCI registries (Docker/other OCI clients)
+  - GitHub releases
+  - Local directories
 - **Enhanced Scripting Capabilities**: Make your Bash scripts more powerful and maintainable with
   advanced features.
 - **Preprocessing**: A preprocessing step that allows for dynamic inclusion of scripts and
-  packages. Supports including functions from local directories or Docker repositories, enhancing
-  modularity and ease of use.
-- **Git Integration**: Automatically adds included functions to `.gitignore` when pulling from OCI
-  registries, preventing unintended commits of external functions.
+  packages, supporting multiple package sources and enhancing modularity.
+- **Git Integration**: Automatically adds included functions to `.gitignore` when pulling from external
+  sources, preventing unintended commits.
 
 ## Getting Started
 
@@ -41,14 +42,25 @@ basher install lf-certification/bashp
 
 ### Option 2: Manual Installation
 
-Alternatively, you can clone this repository and ensure you have Docker installed, as it's required for fetching some of the packages. Ensure Git is configured correctly if you're using Bash+ in a Git-managed project. Bash+ intelligently adds dynamically included functions to `.gitignore`, keeping your repository clean.
+Alternatively, you can clone this repository and ensure you have the following dependencies:
+- Docker (or alternative OCI client) for pulling from OCI registries
+- GitHub CLI (gh) for pulling from GitHub releases
+- Git (optional) for repository management
+
+First, compile Bash+ using:
+
+```bash
+make
+```
+
+The compiled binaries will be available in the `bin/` directory.
 
 ### Usage
 
 Use the `bashp` command to run your script, which will automatically preprocess and execute it:
 
 ```bash
-bashp yourscript.sh
+bin/bashp yourscript.sh
 ```
 
 ### Quickstart Example

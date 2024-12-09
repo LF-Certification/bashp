@@ -1,0 +1,55 @@
+# shellcheck shell=bash
+
+# _package::oci
+# Downloads and extracts a package from an OCI container image and installs it to the include directory.
+#
+# Description:
+#   This function pulls a package from an OCI container image, extracts the specified include file,
+#   and installs it to the appropriate directory. It supports different OCI clients (defaulting to
+#   docker) and handles .gitignore updates for the installed functions. The function creates a
+#   temporary container to extract the files and ensures proper cleanup.
+#
+# Usage:
+#   _package::oci <repository> <include>
+#
+# Parameters:
+#   repository - The OCI repository containing the package image
+#   include    - The path to the file to include, in the format "package/function"
+#
+# Outputs:
+#   No direct output, but creates files in the include directory and updates .gitignore
+#   if running within a git repository.
+#
+# Note:
+#   Requires an OCI client (docker by default) to be installed.
+#   The OCI client can be configured using the OCI_CLIENT environment variable.
+#   The image is expected to be tagged as 'latest' and follow the naming convention
+#   'repository/bashp-package:latest'.
+function _package::oci() {
+  local -r repository=${1:-${repository:-?must be set}}
+  local -r include=${2:-${include:-?must be set}}
+
+  local -r ociClient=${OCI_CLIENT:-docker}
+  command -v "$ociClient" &>/dev/null || return 1
+
+  local -r package=${include%%/*}
+  local -r image="$repository/bashp-$package:latest"
+  if "$ociClient" manifest inspect "$image" &>/dev/null; then
+    mkdir -p "$INCLUDE_DIR/$package"
+
+    local id
+    id=$("$ociClient" create "$image" none)
+
+    # shellcheck disable=SC2064
+    trap "'$ociClient' rm '$id'" EXIT
+
+    "$ociClient" cp "$id:/$include" "$INCLUDE_DIR/$include"
+
+    if command -v git &>/dev/null && git rev-parse --is-inside-work-tree &>/dev/null; then
+      local -r function=${include##*/}
+      local -r gitignore="$INCLUDE_DIR/$package/.gitignore"
+      grep -q "^$function$" "$INCLUDE_DIR/$package/.gitignore" 2>/dev/null ||
+        echo "$function" >> "$gitignore"
+    fi
+  fi
+}

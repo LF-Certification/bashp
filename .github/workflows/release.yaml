@@ -11,6 +11,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Compile Bash+
+        run: |
+          make
+
       - name: Create Release
         uses: "marvinpinto/action-automatic-releases@latest"
         with:
@@ -19,6 +23,6 @@ jobs:
           prerelease: false
           title: ${{ github.ref_name }}
           files: |
-            bashp
-            bashpc
-            bashpp
+            bin/bashp
+            bin/bashpc
+            bin/bashpp
