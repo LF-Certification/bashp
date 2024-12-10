@@ -58,7 +58,7 @@ function _package::oci() {
 }
 # shellcheck shell=bash
 
-# _package::ghrelease
+# _package::gh
 # Downloads and extracts a package from a GitHub release and installs it to the include directory.
 #
 # Description:
@@ -68,7 +68,7 @@ function _package::oci() {
 #   installed functions.
 #
 # Usage:
-#   _package::ghrelease <repository> <include>
+#   _package::gh <repository> <include>
 #
 # Parameters:
 #   repository - The GitHub repository in the format "owner/repo"
@@ -82,7 +82,7 @@ function _package::oci() {
 #   Requires curl to be installed.
 #   Requires either GH_TOKEN or GITHUB_TOKEN environment variable for GitHub API access.
 #   Will create cache directories as needed at BASHP_CACHE_DIR or ~/.cache/bashp.
-function _package::ghrelease() {
+function _package::gh() {
   local -r repository=${1:-${repository:-?must be set}}
   local -r include=${2:-${include:-?must be set}}
 
@@ -141,7 +141,7 @@ function _package::ghrelease() {
 #   BASHP_INCLUDE_REPOS - Comma-separated list of repositories to search for functions.
 #                         Supports the following formats:
 #                         - OCI registries (default prefix or oci://)
-#                         - GitHub releases (ghrelease://)
+#                         - GitHub releases (gh://)
 #                         Defaults to 'ghcr.io/lf-certification' if unset.
 #   INCLUDE_DIR - Directory to search for functions. Used if BASHP_INCLUDE_DIRS is not set.
 #   OCI_CLIENT - OCI client to use for pulling packages (defaults to 'docker')
@@ -161,7 +161,7 @@ function _package::ghrelease() {
 #     sources to prevent accidental commits
 #   - The script sets 'set -e' to exit immediately on errors
 #   - GitHub releases are cached in $BASHP_CACHE_DIR to avoid repeated downloads
-#   - Repository URLs can include explicit protocol handlers (oci://, ghrelease://)
+#   - Repository URLs can include explicit protocol handlers (oci://, gh://)
 #   - If no protocol is specified in repository URL, OCI is assumed
 
 # include
