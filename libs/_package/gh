@@ -1,6 +1,6 @@
 # shellcheck shell=bash
 
-# _package::ghrelease
+# _package::gh
 # Downloads and extracts a package from a GitHub release and installs it to the include directory.
 #
 # Description:
@@ -10,7 +10,7 @@
 #   installed functions.
 #
 # Usage:
-#   _package::ghrelease <repository> <include>
+#   _package::gh <repository> <include>
 #
 # Parameters:
 #   repository - The GitHub repository in the format "owner/repo"
@@ -24,7 +24,7 @@
 #   Requires curl to be installed.
 #   Requires either GH_TOKEN or GITHUB_TOKEN environment variable for GitHub API access.
 #   Will create cache directories as needed at BASHP_CACHE_DIR or ~/.cache/bashp.
-function _package::ghrelease() {
+function _package::gh() {
   local -r repository=${1:-${repository:-?must be set}}
   local -r include=${2:-${include:-?must be set}}
 
