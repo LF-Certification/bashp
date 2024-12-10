@@ -1,0 +1,276 @@
+#!/usr/bin/env bash
+set -e
+
+# shellcheck shell=bash
+
+# _package::oci
+# Downloads and extracts a package from an OCI container image and installs it to the include directory.
+#
+# Description:
+#   This function pulls a package from an OCI container image, extracts the specified include file,
+#   and installs it to the appropriate directory. It supports different OCI clients (defaulting to
+#   docker) and handles .gitignore updates for the installed functions. The function creates a
+#   temporary container to extract the files and ensures proper cleanup.
+#
+# Usage:
+#   _package::oci <repository> <include>
+#
+# Parameters:
+#   repository - The OCI repository containing the package image
+#   include    - The path to the file to include, in the format "package/function"
+#
+# Outputs:
+#   No direct output, but creates files in the include directory and updates .gitignore
+#   if running within a git repository.
+#
+# Note:
+#   Requires an OCI client (docker by default) to be installed.
+#   The OCI client can be configured using the OCI_CLIENT environment variable.
+#   The image is expected to be tagged as 'latest' and follow the naming convention
+#   'repository/bashp-package:latest'.
+function _package::oci() {
+  local -r repository=${1:-${repository:-?must be set}}
+  local -r include=${2:-${include:-?must be set}}
+
+  local -r ociClient=${OCI_CLIENT:-docker}
+  command -v "$ociClient" &>/dev/null || return 1
+
+  local -r package=${include%%/*}
+  local -r image="$repository/bashp-$package:latest"
+  if "$ociClient" manifest inspect "$image" &>/dev/null; then
+    mkdir -p "$INCLUDE_DIR/$package"
+
+    local id
+    id=$("$ociClient" create "$image" none)
+
+    # shellcheck disable=SC2064
+    trap "'$ociClient' rm '$id'" EXIT
+
+    "$ociClient" cp "$id:/$include" "$INCLUDE_DIR/$include"
+
+    if command -v git &>/dev/null && git rev-parse --is-inside-work-tree &>/dev/null; then
+      local -r function=${include##*/}
+      local -r gitignore="$INCLUDE_DIR/$package/.gitignore"
+      grep -q "^$function$" "$INCLUDE_DIR/$package/.gitignore" 2>/dev/null ||
+        echo "$function" >> "$gitignore"
+    fi
+  fi
+}
+# shellcheck shell=bash
+
+# _package::ghrelease
+# Downloads and extracts a package from a GitHub release and installs it to the include directory.
+#
+# Description:
+#   This function downloads the latest release of a package from a GitHub repository,
+#   extracts it, and installs the specified include file to the appropriate directory.
+#   It manages caching of downloaded assets and handles .gitignore updates for the
+#   installed functions.
+#
+# Usage:
+#   _package::ghrelease <repository> <include>
+#
+# Parameters:
+#   repository - The GitHub repository in the format "owner/repo"
+#   include    - The path to the file to include, in the format "package/function"
+#
+# Outputs:
+#   No direct output, but creates files in the cache directory and include directory.
+#   Updates .gitignore if running within a git repository.
+#
+# Note:
+#   Requires curl to be installed.
+#   Requires either GH_TOKEN or GITHUB_TOKEN environment variable for GitHub API access.
+#   Will create cache directories as needed at BASHP_CACHE_DIR or ~/.cache/bashp.
+function _package::ghrelease() {
+  local -r repository=${1:-${repository:-?must be set}}
+  local -r include=${2:-${include:-?must be set}}
+
+  command -v curl &>/dev/null || return 1
+
+  local -r package=${include%%/*}
+  local -r cache="${BASHP_CACHE_DIR:-${HOME}/.cache/bashp}/$repository/$package"
+
+  if [[ ! -f "$cache/$include" ]]; then
+    local -r asset="bashp-$package.tar.gz"
+
+    local -r api_response=$(curl -H "Authorization: Bearer ${GH_TOKEN:-${GITHUB_TOKEN}}" -sSf \
+      "https://api.github.com/repos/$repository/releases/latest")
+
+    local url
+    url=$(echo "$api_response" | grep -o '"url": *"[^"]*"' | grep "assets" | head -1 | cut -d'"' -f4)
+
+    curl -H "Authorization: Bearer ${GH_TOKEN:-${GITHUB_TOKEN}}" \
+         -H "Accept: application/octet-stream" -sSfL "$url" -o "$cache/$asset"
+    tar -xzf "$cache/$asset" -C "$cache"
+  fi
+
+  mkdir -p "$INCLUDE_DIR/$package"
+  cp "$cache/$include" "$INCLUDE_DIR/$include"
+
+  if command -v git &>/dev/null && git rev-parse --is-inside-work-tree &>/dev/null; then
+    local -r function=${include##*/}
+    local -r gitignore="$INCLUDE_DIR/$package/.gitignore"
+    grep -q "^$function$" "$gitignore" 2>/dev/null || echo "$function" >> "$gitignore"
+  fi
+}
+
+# bashpp
+# A preprocessor for Bash scripts with support for including external functions.
+#
+# Description:
+#   bashpp is a Bash script preprocessor that allows for the inclusion of external functions into
+#   Bash scripts. It supports including functions from:
+#   - Local directories specified by $BASHP_INCLUDE_DIRS
+#   - OCI registries (via configurable OCI client)
+#   - GitHub releases (via direct API calls)
+#   This enables modular script development by allowing scripts to dynamically include and use
+#   functions from external packages.
+#
+# Usage:
+#   bashpp [file]
+#
+# Parameters:
+#   file - The path to the Bash script file to be preprocessed. If not specified, bashpp reads from
+#          /dev/stdin.
+#
+# Environment Variables:
+#   BASHP_INCLUDE_DIRS - Colon-separated list of directories to search for functions. If not set,
+#                        defaults to the value of $INCLUDE_DIR or 'libs' if $INCLUDE_DIR is also
+#                        unset.
+#   BASHP_INCLUDE_REPOS - Comma-separated list of repositories to search for functions.
+#                         Supports the following formats:
+#                         - OCI registries (default prefix or oci://)
+#                         - GitHub releases (ghrelease://)
+#                         Defaults to 'ghcr.io/lf-certification' if unset.
+#   INCLUDE_DIR - Directory to search for functions. Used if BASHP_INCLUDE_DIRS is not set.
+#   OCI_CLIENT - OCI client to use for pulling packages (defaults to 'docker')
+#   BASHP_CACHE_DIR - Cache directory for GitHub release assets (defaults to ~/.cache/bashp)
+#   GH_TOKEN/GITHUB_TOKEN - GitHub authentication token for accessing releases (optional)
+#
+# Dependencies:
+#   - Docker (or alternative OCI client specified by OCI_CLIENT) for pulling from OCI registries
+#   - curl for pulling from GitHub releases
+#
+# Notes:
+#   - Functions to be included should be placed in directories or repositories following the
+#     structure <package>/<function>
+#   - For OCI registries, packages should be named 'bashp-<package>:latest'
+#   - For GitHub releases, assets should be named 'bashp-<package>.tar.gz'
+#   - The script automatically adds included functions to .gitignore when pulled from external
+#     sources to prevent accidental commits
+#   - The script sets 'set -e' to exit immediately on errors
+#   - GitHub releases are cached in $BASHP_CACHE_DIR to avoid repeated downloads
+#   - Repository URLs can include explicit protocol handlers (oci://, ghrelease://)
+#   - If no protocol is specified in repository URL, OCI is assumed
+
+# include
+# Attempts to include a specified function from a given package.
+#
+# Usage:
+#   include <package>/<function>
+#
+# Parameters:
+#   package/function - The combined name of the package and function to include, formatted as
+#                      "<package>/<function>".
+#
+# Description:
+#   This function checks if the specified function is already included. If not, it searches for the
+#   function file within directories specified by $BASHP_INCLUDE_DIRS. Failing to find the file locally,
+#   it attempts to pull the package using Docker from repositories listed in $BASHP_INCLUDE_REPOS
+#   (defaults to ghcr.io/lf-certification if unset). If the function file is still missing after
+#   the pull attempt, an error is printed. Otherwise, the function is marked as included and its
+#   file is sent for preprocessing. Additionally, if the function is pulled from an OCI registry
+#   and Git is available, the function's name is added to a `.gitignore` file within the package
+#   directory to prevent it from being accidentally committed to version control.
+function include() {
+  local include=$1
+
+  local path
+  IFS=:; for directory in $BASHP_INCLUDE_DIRS; do
+    path="$directory/$include"
+    [[ -f "$path" ]] && break
+  done
+
+  if [[ ! -f "$path" ]]; then
+    IFS=,; for repository in $BASHP_INCLUDE_REPOS; do
+      local handler=${repository%%://*}
+      [[ "$handler" != "$repository" ]] || handler=oci
+      "_package::$handler" "${repository#*://}" "$include"
+    done
+  fi
+
+  [[ ! -f "$path" ]] && echo "bashpp: failed to include $include" >&2 && return 1
+
+  preprocess "$path"
+}
+
+# include_once
+# Ensures a function is included only once.
+#
+# Usage:
+#   include_once <package>/<function>
+#
+# Parameters:
+#   package/function - The combined name of the package and function to include, formatted as
+#                      "<package>/<function>".
+#
+# Description:
+#   This function checks if the specified function, identified by a combination of its package and
+#   function name, has already been included. If it has not been included, it marks the function as
+#   included and then calls the 'include' function to include the function from either local
+#   directories specified by $BASHP_INCLUDE_DIRS or Docker repositories listed in $BASHP_INCLUDE_REPOS.
+#   This prevents multiple inclusions of the same function, ensuring that each function is included
+#   only once, thereby avoiding redundancy and potential conflicts.
+declare -A INCLUDED=()
+function include_once() {
+  local include=$1
+
+  if [[ -z "${INCLUDED[$include]}" ]]; then
+    INCLUDED[$include]=1
+    include "$include"
+  fi
+}
+
+# preprocess
+# Processes a given file line by line.
+#
+# Usage:
+#   preprocess <file>
+#
+# Parameters:
+#   file - The path to the file to be processed.
+#
+# Description:
+#   This function reads the specified file line by line. For lines that contain a "::" or
+#   "#include" directive, it calls the include function to handle the specified function. Each line
+#   is echoed back, with modifications applied to lines containing directives for function
+#   inclusion.
+function preprocess() {
+  local file=$1
+
+  local line
+  while IFS= read -r line; do
+    case "$line" in
+      *::*)
+        local include
+        grep -Eo '[a-zA-Z0-9_]+::[a-zA-Z0-9_]+' <<< "$line" |
+        	while read include; do include_once ${include//::/\/}; done
+        echo "$line"
+      ;;
+      "#include "*)
+        include_once ${line#*#include }
+      ;;
+      *) echo "$line" ;;
+    esac
+  done < "$file"
+
+  if [[ "$line" != "" ]]; then echo ""; fi
+}
+
+INCLUDE_DIR=${INCLUDE_DIR:-libs}
+BASHP_INCLUDE_DIRS=${BASHP_INCLUDE_DIRS:-$INCLUDE_DIR}
+BASHP_INCLUDE_REPOS=${BASHP_INCLUDE_REPOS:-ghcr.io/lf-certification}
+mkdir -p "$INCLUDE_DIR"
+
+preprocess "${1:-/dev/stdin}" "$file"

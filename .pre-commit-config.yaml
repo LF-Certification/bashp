@@ -1,0 +1,7 @@
+repos:
+- repo: local
+  hooks:
+    - id: binaries
+      name: binaries
+      entry: make
+      language: system
