@@ -81,7 +81,8 @@ function _package::oci() {
 # Note:
 #   Requires curl to be installed.
 #   Requires either GH_TOKEN or GITHUB_TOKEN environment variable for GitHub API access.
-#   Will create cache directories as needed at BASHP_CACHE_DIR or ~/.cache/bashp.
+#   Will create cache directories as needed at BASHP_CACHE_DIR, XDG_CACHE_HOME/bashp or
+#   ~/.cache/bashp.
 function _package::gh() {
   local -r repository=${1:-${repository:-?must be set}}
   local -r include=${2:-${include:-?must be set}}
@@ -89,7 +90,7 @@ function _package::gh() {
   command -v curl &>/dev/null || return 1
 
   local -r package=${include%%/*}
-  local -r cache="${BASHP_CACHE_DIR:-${HOME}/.cache/bashp}/$repository/$package"
+  local -r cache="${BASHP_CACHE_DIR:-${XDG_CACHE_HOME:-${HOME}/.cache}/bashp}/$repository/$package"
 
   if [[ ! -f "$cache/$include" ]]; then
     local -r asset="bashp-$package.tar.gz"
