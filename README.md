@@ -1,3 +1,5 @@
+[![basher install](https://www.basher.it/assets/logo/basher_install.svg)](https://www.basher.it/package/)
+
 # Bash+ (bashp)
 
 Bash+ (bashp) is an enhanced Bash scripting framework designed to extend the capabilities of
@@ -23,10 +25,23 @@ functionalities with ease.
 
 ## Getting Started
 
-To get started with Bash+, clone this repository and ensure you have Docker installed, as it's
-required for fetching some of the packages. Ensure Git is configured correctly if you're using
-Bash+ in a Git-managed project. Bash+ intelligently adds dynamically included functions to
-`.gitignore`, keeping your repository clean.
+You can install Bash+ in two ways:
+
+### Option 1: Using Basher (Recommended)
+
+The easiest way to install Bash+ is using [Basher](https://www.basher.it/), a package manager for Bash scripts:
+
+```bash
+# Install basher if you haven't already
+curl -s https://raw.githubusercontent.com/basherpm/basher/master/install.sh | bash
+
+# Install Bash+
+basher install lf-certification/bashp
+```
+
+### Option 2: Manual Installation
+
+Alternatively, you can clone this repository and ensure you have Docker installed, as it's required for fetching some of the packages. Ensure Git is configured correctly if you're using Bash+ in a Git-managed project. Bash+ intelligently adds dynamically included functions to `.gitignore`, keeping your repository clean.
 
 ### Usage
 
@@ -41,8 +56,7 @@ bashp yourscript.sh
 Here's a simple [example](hello-world.sh) to get you started with Bash+:
 
 ```shell
-#!./bashp
-# shellcheck shell=bash
+#!/usr/bin/env bashp
 
 # Option 1
 # Include (once) using the "#include" directive

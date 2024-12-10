@@ -1,5 +1,4 @@
-#!./bashp
-# shellcheck shell=bash
+#!/usr/bin/env bashp
 
 # Option 1
 # Include (once) using the "#include" directive

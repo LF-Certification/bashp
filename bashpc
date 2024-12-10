@@ -6,6 +6,5 @@ include_dir="$(dirname "$script")/libs"
 
 mkdir -p "$include_dir" || include_dir=$(mktemp -d)
 
-PATH="$PATH:." \
 INCLUDE_DIR="$include_dir" \
 bashpp "$script" | sed '1s,^#!.*$,#!/usr/bin/env bash,'

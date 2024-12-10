@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
 set -e
 
-PATH="$PATH:." \
 bashpc "${1:-/dev/stdin}" | bash
