@@ -6,4 +6,4 @@ project.
 ## Functions
 
 - `_package::oci`
-- `_package::github_release_asset`
+- `_package::gh`
