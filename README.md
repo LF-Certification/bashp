@@ -60,7 +60,7 @@ The compiled binaries will be available in the `bin/` directory.
 Use the `bashp` command to run your script, which will automatically preprocess and execute it:
 
 ```bash
-bin/bashp yourscript.sh
+bashp yourscript.sh
 ```
 
 ### Quickstart Example
