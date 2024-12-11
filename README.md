@@ -44,7 +44,7 @@ basher install lf-certification/bashp
 
 Alternatively, you can clone this repository and ensure you have the following dependencies:
 - Docker (or alternative OCI client) for pulling from OCI registries
-- GitHub CLI (gh) for pulling from GitHub releases
+- Curl for pulling from GitHub releases
 - Git (optional) for repository management
 
 First, compile Bash+ using:
