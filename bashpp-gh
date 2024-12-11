@@ -40,11 +40,12 @@ if [[ ! -f "$cache/$include" ]]; then
   declare -r asset="bashp-$package.tar.gz"
 
   response=$(curl -H "Authorization: Bearer ${GH_TOKEN:-${GITHUB_TOKEN}}" -sSf \
-    "https://api.github.com/repos/$repository/releases/latest")
+    "https://api.github.com/repos/$repository/releases/latest" | tr -d "\n")
   declare -r response
   [[ -z "$response" ]] && exit 1
 
-  url=$(echo "$response" | grep -o '"url": *"[^"]*"' | grep "assets" | head -1 | cut -d'"' -f4)
+  url=$(echo "$response" | grep -Eo '"url":\s*"[^"]*"[^}]*"name":\s*"'"$asset"'"' |
+    grep -Eo '"url":\s*"[^"]*"' | cut -d'"' -f4)
   declare -r url
   [[ -z "$url" ]] && exit 1
 
