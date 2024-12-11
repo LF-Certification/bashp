@@ -49,6 +49,7 @@ if [[ ! -f "$cache/$include" ]]; then
   declare -r url
   [[ -z "$url" ]] && exit 1
 
+  mkdir -p "$cache"
   curl -H "Authorization: Bearer ${GH_TOKEN:-${GITHUB_TOKEN}}" \
         -H "Accept: application/octet-stream" -sSfL "$url" -o "$cache/$asset" || exit 1
   tar -xzf "$cache/$asset" -C "$cache"
