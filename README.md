@@ -21,8 +21,8 @@ functionalities with ease.
   advanced features.
 - **Preprocessing**: A preprocessing step that allows for dynamic inclusion of scripts and
   packages, supporting multiple package sources and enhancing modularity.
-- **Git Integration**: Automatically adds included functions to `.gitignore` when pulling from external
-  sources, preventing unintended commits.
+- **Git Integration**: Automatically adds included functions to `.gitignore` when pulling from
+  external sources, preventing unintended commits.
 
 ## Getting Started
 
@@ -30,7 +30,8 @@ You can install Bash+ in two ways:
 
 ### Option 1: Using Basher (Recommended)
 
-The easiest way to install Bash+ is using [Basher](https://www.basher.it/), a package manager for Bash scripts:
+The easiest way to install Bash+ is using [Basher](https://www.basher.it/), a package manager for
+Bash scripts:
 
 ```bash
 # Install basher if you haven't already
@@ -42,18 +43,10 @@ basher install lf-certification/bashp
 
 ### Option 2: Manual Installation
 
-Alternatively, you can clone this repository and ensure you have the following dependencies:
-- Docker (or alternative OCI client) for pulling from OCI registries
-- Curl for pulling from GitHub releases
-- Git (optional) for repository management
-
-First, compile Bash+ using:
-
-```bash
-make
-```
-
-The compiled binaries will be available in the `bin/` directory.
+Alternatively, you can clone this repository and ensure you have Docker and `curl` installed, as
+they are required for fetching some of the packages. Ensure Git is configured correctly if you're
+using Bash+ in a Git-managed project. Bash+ intelligently adds dynamically included functions to
+`.gitignore`, keeping your repository clean.
 
 ### Usage
 
@@ -82,7 +75,8 @@ test::hello
 test::hello_world
 ```
 
-This script demonstrates two ways to include and use functions from external libraries or packages in your Bash+ scripts.
+This script demonstrates two ways to include and use functions from external libraries or packages
+in your Bash+ scripts.
 
 ## Contributing
 
@@ -91,4 +85,5 @@ features.
 
 ## License
 
-This project is licensed under the BSD-3-Clause license - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the BSD-3-Clause license - see the [LICENSE](LICENSE) file for
+details.
