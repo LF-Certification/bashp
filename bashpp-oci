@@ -28,9 +28,9 @@
 #   The image is expected to be tagged as 'latest' and follow the naming convention
 #   'repository/bashp-package:latest'.
 
-declare -r INCLUDE_DIR=${INCLUDE_DIR:-${INCLUDE_DIR:-?must be set}}
-declare -r repository=${1:-${repository:-?must be set}}
-declare -r include=${2:-${include:-?must be set}}
+declare -r INCLUDE_DIR=${INCLUDE_DIR:-${INCLUDE_DIR:?must be set}}
+declare -r repository=${1:-${repository:?must be set}}
+declare -r include=${2:-${include:?must be set}}
 
 declare -r ociClient=${OCI_CLIENT:-docker}
 command -v "$ociClient" &>/dev/null || exit 1

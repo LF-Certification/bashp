@@ -27,9 +27,9 @@
 #   Will create cache directories as needed at BASHP_CACHE_DIR, XDG_CACHE_HOME/bashp or
 #   ~/.cache/bashp.
 
-declare -r INCLUDE_DIR=${INCLUDE_DIR:-${INCLUDE_DIR:-?must be set}}
-declare -r repository=${1:-${repository:-?must be set}}
-declare -r include=${2:-${include:-?must be set}}
+declare -r INCLUDE_DIR=${INCLUDE_DIR:-${INCLUDE_DIR:?must be set}}
+declare -r repository=${1:-${repository:?must be set}}
+declare -r include=${2:-${include:?must be set}}
 
 command -v curl &>/dev/null || exit 1
 
