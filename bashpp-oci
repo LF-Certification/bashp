@@ -40,8 +40,8 @@ declare -r image="$repository/bashp-$package:latest"
 if "$ociClient" manifest inspect "$image" &>/dev/null; then
   mkdir -p "$INCLUDE_DIR/$package"
 
-  declare -r id
   id=$("$ociClient" create "$image" none)
+  declare -r id
 
   # shellcheck disable=SC2064
   trap "'$ociClient' rm '$id'" EXIT

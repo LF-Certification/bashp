@@ -39,12 +39,12 @@ declare -r cache="${BASHP_CACHE_DIR:-${XDG_CACHE_HOME:-${HOME}/.cache}/bashp}/$r
 if [[ ! -f "$cache/$include" ]]; then
   declare -r asset="bashp-$package.tar.gz"
 
-  declare -r response
   response=$(curl -H "Authorization: Bearer ${GH_TOKEN:-${GITHUB_TOKEN}}" -sSf \
     "https://api.github.com/repos/$repository/releases/latest")
+  declare -r response
 
-  declare -r url
   url=$(echo "$response" | grep -o '"url": *"[^"]*"' | grep "assets" | head -1 | cut -d'"' -f4)
+  declare -r url
 
   curl -H "Authorization: Bearer ${GH_TOKEN:-${GITHUB_TOKEN}}" \
         -H "Accept: application/octet-stream" -sSfL "$url" -o "$cache/$asset"
