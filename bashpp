@@ -83,7 +83,8 @@ function include() {
     IFS=,; for repository in $BASHP_INCLUDE_REPOS; do
       local handler=${repository%%://*}
       [[ "$handler" != "$repository" ]] || handler=oci
-      INCLUDE_DIR=$INCLUDE_DIR "bashpp-$handler" "${repository#*://}" "$include"
+      INCLUDE_DIR=$INCLUDE_DIR BASHP_CACHE_DIR="$BASHP_CACHE_DIR" \
+        "bashpp-$handler" "${repository#*://}" "$include"
     done
   fi
 
