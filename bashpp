@@ -84,7 +84,7 @@ function include() {
       local handler=${repository%%://*}
       [[ "$handler" != "$repository" ]] || handler=oci
       INCLUDE_DIR=$INCLUDE_DIR BASHP_CACHE_DIR="$BASHP_CACHE_DIR" \
-        "bashpp-$handler" "${repository#*://}" "$include"
+        "bashpp-$handler" "${repository#*://}" "$include" >/dev/null
     done
   fi
 
