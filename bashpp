@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 set -e
 
-#include _package/oci
-#include _package/gh
-
 # bashpp
 # A preprocessor for Bash scripts with support for including external functions.
 #
@@ -33,6 +30,7 @@ set -e
 #                         - GitHub releases (gh://)
 #                         Defaults to 'ghcr.io/lf-certification' if unset.
 #   INCLUDE_DIR - Directory to search for functions. Used if BASHP_INCLUDE_DIRS is not set.
+#                 Defaults to 'libs' if unset.
 #   OCI_CLIENT - OCI client to use for pulling packages (defaults to 'docker')
 #   BASHP_CACHE_DIR - Cache directory for GitHub release assets (defaults to ~/.cache/bashp)
 #   GH_TOKEN/GITHUB_TOKEN - GitHub authentication token for accessing releases (optional)
@@ -85,7 +83,7 @@ function include() {
     IFS=,; for repository in $BASHP_INCLUDE_REPOS; do
       local handler=${repository%%://*}
       [[ "$handler" != "$repository" ]] || handler=oci
-      "_package::$handler" "${repository#*://}" "$include"
+      INCLUDE_DIR=$INCLUDE_DIR "bashpp-$handler" "${repository#*://}" "$include"
     done
   fi
 
@@ -128,13 +126,13 @@ function include_once() {
 #   preprocess <file>
 #
 # Parameters:
-#   file - The path to the file to be processed.
+#   file - The path to the file to be processed. If not specified, reads from /dev/stdin.
 #
 # Description:
 #   This function reads the specified file line by line. For lines that contain a "::" or
 #   "#include" directive, it calls the include function to handle the specified function. Each line
 #   is echoed back, with modifications applied to lines containing directives for function
-#   inclusion.
+#   inclusion. A newline is added at the end of the file if the last line is not empty.
 function preprocess() {
   local file=$1
 
