@@ -42,12 +42,14 @@ if [[ ! -f "$cache/$include" ]]; then
   response=$(curl -H "Authorization: Bearer ${GH_TOKEN:-${GITHUB_TOKEN}}" -sSf \
     "https://api.github.com/repos/$repository/releases/latest")
   declare -r response
+  [[ -z "$response" ]] && exit 1
 
   url=$(echo "$response" | grep -o '"url": *"[^"]*"' | grep "assets" | head -1 | cut -d'"' -f4)
   declare -r url
+  [[ -z "$url" ]] && exit 1
 
   curl -H "Authorization: Bearer ${GH_TOKEN:-${GITHUB_TOKEN}}" \
-        -H "Accept: application/octet-stream" -sSfL "$url" -o "$cache/$asset"
+        -H "Accept: application/octet-stream" -sSfL "$url" -o "$cache/$asset" || exit 1
   tar -xzf "$cache/$asset" -C "$cache"
 fi
 
