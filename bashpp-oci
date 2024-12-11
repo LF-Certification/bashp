@@ -1,16 +1,18 @@
 # shellcheck shell=bash
 
 # bashpp-oci
-# Downloads and extracts a package from an OCI container image and installs it to the include directory.
+# Extension handler for downloading packages from OCI container images.
 #
 # Description:
-#   This script pulls a package from an OCI container image, extracts the specified include file,
-#   and installs it to the appropriate directory. It supports different OCI clients (defaulting to
-#   docker) and handles .gitignore updates for the installed functions. The script creates a
-#   temporary container to extract the files and ensures proper cleanup.
+#   This script serves as an extension handler for bashpp to pull packages from OCI container
+#   images.
+#   When bashpp encounters an OCI repository URL (default or oci:// prefix), it delegates the
+#   package retrieval to this handler. The handler pulls the package, extracts the specified
+#   include file, and installs it to the appropriate directory.
 #
 # Usage:
 #   bashpp-oci <repository> <include>
+#   Called automatically by bashpp when processing OCI repository URLs
 #
 # Parameters:
 #   repository - The OCI repository containing the package image

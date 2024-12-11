@@ -1,16 +1,17 @@
 # shellcheck shell=bash
 
 # Script: bashpp-gh
-# Downloads and extracts a package from a GitHub release and installs it to the include directory.
+# Extension handler for downloading packages from GitHub releases.
 #
 # Description:
-#   This script downloads the latest release of a package from a GitHub repository,
-#   extracts it, and installs the specified include file to the appropriate directory.
-#   It manages caching of downloaded assets and handles .gitignore updates for the
-#   installed functions.
+#   This script serves as an extension handler for bashpp to pull packages from GitHub releases.
+#   When bashpp encounters a GitHub repository URL (gh:// prefix), it delegates the package
+#   retrieval to this handler. The handler downloads the latest release asset, extracts the
+#   specified include file, and installs it to the appropriate directory.
 #
 # Usage:
-#   ./bashpp-gh <repository> <include>
+#   bashpp-gh <repository> <include>
+#   Called automatically by bashpp when processing GitHub repository URLs
 #
 # Parameters:
 #   repository - The GitHub repository in the format "owner/repo"

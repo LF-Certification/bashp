@@ -8,8 +8,7 @@ set -e
 #   bashpp is a Bash script preprocessor that allows for the inclusion of external functions into
 #   Bash scripts. It supports including functions from:
 #   - Local directories specified by $BASHP_INCLUDE_DIRS
-#   - OCI registries (via configurable OCI client)
-#   - GitHub releases (via direct API calls)
+#   - External sources via extension handlers (e.g., bashpp-oci, bashpp-gh)
 #   This enables modular script development by allowing scripts to dynamically include and use
 #   functions from external packages.
 #
@@ -32,7 +31,8 @@ set -e
 #   INCLUDE_DIR - Directory to search for functions. Used if BASHP_INCLUDE_DIRS is not set.
 #                 Defaults to 'libs' if unset.
 #   OCI_CLIENT - OCI client to use for pulling packages (defaults to 'docker')
-#   BASHP_CACHE_DIR - Cache directory for GitHub release assets (defaults to ~/.cache/bashp)
+#   BASHP_CACHE_DIR - Cache directory for GitHub release assets (defaults to XDG_CACHE_HOME/bashp
+#                     or ~/.cache/bashp)
 #   GH_TOKEN/GITHUB_TOKEN - GitHub authentication token for accessing releases (optional)
 #
 # Dependencies:
