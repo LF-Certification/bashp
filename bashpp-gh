@@ -1,0 +1,65 @@
+# shellcheck shell=bash
+
+# Script: bashpp-gh
+# Extension handler for downloading packages from GitHub releases.
+#
+# Description:
+#   This script serves as an extension handler for bashpp to pull packages from GitHub releases.
+#   When bashpp encounters a GitHub repository URL (gh:// prefix), it delegates the package
+#   retrieval to this handler. The handler downloads the latest release asset, extracts the
+#   specified include file, and installs it to the appropriate directory.
+#
+# Usage:
+#   bashpp-gh <repository> <include>
+#   Called automatically by bashpp when processing GitHub repository URLs
+#
+# Parameters:
+#   repository - The GitHub repository in the format "owner/repo"
+#   include    - The path to the file to include, in the format "package/function"
+#
+# Outputs:
+#   No direct output, but creates files in the cache directory and include directory.
+#   Updates .gitignore if running within a git repository.
+#
+# Note:
+#   Requires curl to be installed.
+#   Requires either GH_TOKEN or GITHUB_TOKEN environment variable for GitHub API access.
+#   Will create cache directories as needed at BASHP_CACHE_DIR, XDG_CACHE_HOME/bashp or
+#   ~/.cache/bashp.
+
+declare -r INCLUDE_DIR=${INCLUDE_DIR:-${INCLUDE_DIR:?must be set}}
+declare -r repository=${1:-${repository:?must be set}}
+declare -r include=${2:-${include:?must be set}}
+
+command -v curl &>/dev/null || exit 1
+
+declare -r package=${include%%/*}
+declare -r cache="${BASHP_CACHE_DIR:-${XDG_CACHE_HOME:-${HOME}/.cache}/bashp}/$repository/$package"
+
+if [[ ! -f "$cache/$include" ]]; then
+  declare -r asset="bashp-$package.tar.gz"
+
+  response=$(curl -H "Authorization: Bearer ${GH_TOKEN:-${GITHUB_TOKEN}}" -sSf \
+    "https://api.github.com/repos/$repository/releases/latest" | tr -d "\n")
+  declare -r response
+  [[ -z "$response" ]] && exit 1
+
+  url=$(echo "$response" | grep -Eo '"url":\s*"[^"]*"[^}]*"name":\s*"'"$asset"'"' |
+    grep -Eo '"url":\s*"[^"]*"' | cut -d'"' -f4)
+  declare -r url
+  [[ -z "$url" ]] && exit 1
+
+  mkdir -p "$cache"
+  curl -H "Authorization: Bearer ${GH_TOKEN:-${GITHUB_TOKEN}}" \
+        -H "Accept: application/octet-stream" -sSfL "$url" -o "$cache/$asset" || exit 1
+  tar -xzf "$cache/$asset" -C "$cache"
+fi
+
+mkdir -p "$INCLUDE_DIR/$package"
+cp "$cache/$include" "$INCLUDE_DIR/$include"
+
+if command -v git &>/dev/null && git rev-parse --is-inside-work-tree &>/dev/null; then
+  declare -r function=${include##*/}
+  declare -r gitignore="$INCLUDE_DIR/$package/.gitignore"
+  grep -q "^$function$" "$gitignore" 2>/dev/null || echo "$function" >> "$gitignore"
+fi

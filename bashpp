@@ -6,13 +6,11 @@ set -e
 #
 # Description:
 #   bashpp is a Bash script preprocessor that allows for the inclusion of external functions into
-#   Bash scripts. It supports including functions from local directories specified by
-#   $BASHP_INCLUDE_DIRS or from Docker repositories listed in $BASHP_INCLUDE_REPOS. This enables
-#   modular script development by allowing scripts to dynamically include and use functions from
-#   external packages. The script processes input files line by line, identifying and handling
-#   include directives for external functions. If a function is not already included, bashpp
-#   attempts to find it locally or pull it from a Docker repository. Each included function is then
-#   preprocessed for further include directives.
+#   Bash scripts. It supports including functions from:
+#   - Local directories specified by $BASHP_INCLUDE_DIRS
+#   - External sources via extension handlers (e.g., bashpp-oci, bashpp-gh)
+#   This enables modular script development by allowing scripts to dynamically include and use
+#   functions from external packages.
 #
 # Usage:
 #   bashpp [file]
@@ -25,20 +23,33 @@ set -e
 #   BASHP_INCLUDE_DIRS - Colon-separated list of directories to search for functions. If not set,
 #                        defaults to the value of $INCLUDE_DIR or 'libs' if $INCLUDE_DIR is also
 #                        unset.
-#   BASHP_INCLUDE_REPOS - Colon-separated list of Docker repositories to search for functions.
+#   BASHP_INCLUDE_REPOS - Comma-separated list of repositories to search for functions.
+#                         Supports the following formats:
+#                         - OCI registries (default prefix or oci://)
+#                         - GitHub releases (gh://)
 #                         Defaults to 'ghcr.io/lf-certification' if unset.
 #   INCLUDE_DIR - Directory to search for functions. Used if BASHP_INCLUDE_DIRS is not set.
+#                 Defaults to 'libs' if unset.
+#   OCI_CLIENT - OCI client to use for pulling packages (defaults to 'docker')
+#   BASHP_CACHE_DIR - Cache directory for GitHub release assets (defaults to XDG_CACHE_HOME/bashp
+#                     or ~/.cache/bashp)
+#   GH_TOKEN/GITHUB_TOKEN - GitHub authentication token for accessing releases (optional)
 #
 # Dependencies:
-#   - Docker must be installed and available in the PATH if external functions are to be pulled 
-#     from Docker repositories.
+#   - Docker (or alternative OCI client specified by OCI_CLIENT) for pulling from OCI registries
+#   - curl for pulling from GitHub releases
 #
 # Notes:
-#   - Functions to be included should be placed in directories or Docker repositories following the
-#     structure <package>/<function>, where <package> is the name of the package containing the
-#     function, and <function> is the name of the function file.
-#   - The script sets the 'set -e' option to exit immediately if a command exits with a non-zero
-#     status, ensuring that errors in function inclusion or preprocessing are not silently ignored.
+#   - Functions to be included should be placed in directories or repositories following the
+#     structure <package>/<function>
+#   - For OCI registries, packages should be named 'bashp-<package>:latest'
+#   - For GitHub releases, assets should be named 'bashp-<package>.tar.gz'
+#   - The script automatically adds included functions to .gitignore when pulled from external
+#     sources to prevent accidental commits
+#   - The script sets 'set -e' to exit immediately on errors
+#   - GitHub releases are cached in $BASHP_CACHE_DIR to avoid repeated downloads
+#   - Repository URLs can include explicit protocol handlers (oci://, gh://)
+#   - If no protocol is specified in repository URL, OCI is assumed
 
 # include
 # Attempts to include a specified function from a given package.
@@ -68,26 +79,12 @@ function include() {
     [[ -f "$path" ]] && break
   done
 
-  if [[ ! -f "$path" ]] && command -v docker &>/dev/null; then
-    local repository
-    IFS=:; for repository in $BASHP_INCLUDE_REPOS; do
-      local package=${include%%/*}
-      local image="$repository/bashp-$package:latest"
-      if docker manifest inspect "$image" &>/dev/null; then
-        local id
-        id=$(docker create "$image" none)
-        mkdir -p "$INCLUDE_DIR/$package"
-        docker cp "$id:/$include" "$INCLUDE_DIR/$include"
-        docker rm "$id"
-
-        if command -v git &>/dev/null && git rev-parse --is-inside-work-tree &>/dev/null; then
-          local function=${include##*/}
-          local gitignore="$INCLUDE_DIR/$package/.gitignore"
-          [[ -f "$gitignore" ]] && grep -q "^$function\$" "$gitignore" || \
-              echo "$function" >> "$gitignore"
-        fi
-        break
-      fi
+  if [[ ! -f "$path" ]]; then
+    IFS=,; for repository in $BASHP_INCLUDE_REPOS; do
+      local handler=${repository%%://*}
+      [[ "$handler" != "$repository" ]] || handler=oci
+      INCLUDE_DIR=$INCLUDE_DIR BASHP_CACHE_DIR="$BASHP_CACHE_DIR" \
+        "bashpp-$handler" "${repository#*://}" "$include" >/dev/null
     done
   fi
 
@@ -130,13 +127,13 @@ function include_once() {
 #   preprocess <file>
 #
 # Parameters:
-#   file - The path to the file to be processed.
+#   file - The path to the file to be processed. If not specified, reads from /dev/stdin.
 #
 # Description:
 #   This function reads the specified file line by line. For lines that contain a "::" or
 #   "#include" directive, it calls the include function to handle the specified function. Each line
 #   is echoed back, with modifications applied to lines containing directives for function
-#   inclusion.
+#   inclusion. A newline is added at the end of the file if the last line is not empty.
 function preprocess() {
   local file=$1
 

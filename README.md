@@ -13,15 +13,16 @@ functionalities with ease.
 
 - **Modular Design**: Easily include and manage external libraries and packages in your Bash
   scripts.
-- **Package Management**: Leverage reusable components and packages, potentially hosted in external
-  repositories or available as Docker images.
+- **Package Management**: Leverage reusable components and packages from multiple sources:
+  - OCI registries (Docker/other OCI clients)
+  - GitHub releases
+  - Local directories
 - **Enhanced Scripting Capabilities**: Make your Bash scripts more powerful and maintainable with
   advanced features.
 - **Preprocessing**: A preprocessing step that allows for dynamic inclusion of scripts and
-  packages. Supports including functions from local directories or Docker repositories, enhancing
-  modularity and ease of use.
-- **Git Integration**: Automatically adds included functions to `.gitignore` when pulling from OCI
-  registries, preventing unintended commits of external functions.
+  packages, supporting multiple package sources and enhancing modularity.
+- **Git Integration**: Automatically adds included functions to `.gitignore` when pulling from
+  external sources, preventing unintended commits.
 
 ## Getting Started
 
@@ -29,7 +30,8 @@ You can install Bash+ in two ways:
 
 ### Option 1: Using Basher (Recommended)
 
-The easiest way to install Bash+ is using [Basher](https://www.basher.it/), a package manager for Bash scripts:
+The easiest way to install Bash+ is using [Basher](https://www.basher.it/), a package manager for
+Bash scripts:
 
 ```bash
 # Install basher if you haven't already
@@ -41,7 +43,10 @@ basher install lf-certification/bashp
 
 ### Option 2: Manual Installation
 
-Alternatively, you can clone this repository and ensure you have Docker installed, as it's required for fetching some of the packages. Ensure Git is configured correctly if you're using Bash+ in a Git-managed project. Bash+ intelligently adds dynamically included functions to `.gitignore`, keeping your repository clean.
+Alternatively, you can clone this repository and ensure you have Docker and `curl` installed, as
+they are required for fetching some of the packages. Ensure Git is configured correctly if you're
+using Bash+ in a Git-managed project. Bash+ intelligently adds dynamically included functions to
+`.gitignore`, keeping your repository clean.
 
 ### Usage
 
@@ -70,7 +75,8 @@ test::hello
 test::hello_world
 ```
 
-This script demonstrates two ways to include and use functions from external libraries or packages in your Bash+ scripts.
+This script demonstrates two ways to include and use functions from external libraries or packages
+in your Bash+ scripts.
 
 ## Contributing
 
@@ -79,4 +85,5 @@ features.
 
 ## License
 
-This project is licensed under the BSD-3-Clause license - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the BSD-3-Clause license - see the [LICENSE](LICENSE) file for
+details.

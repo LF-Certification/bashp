@@ -1,0 +1,57 @@
+# shellcheck shell=bash
+
+# bashpp-oci
+# Extension handler for downloading packages from OCI container images.
+#
+# Description:
+#   This script serves as an extension handler for bashpp to pull packages from OCI container
+#   images.
+#   When bashpp encounters an OCI repository URL (default or oci:// prefix), it delegates the
+#   package retrieval to this handler. The handler pulls the package, extracts the specified
+#   include file, and installs it to the appropriate directory.
+#
+# Usage:
+#   bashpp-oci <repository> <include>
+#   Called automatically by bashpp when processing OCI repository URLs
+#
+# Parameters:
+#   repository - The OCI repository containing the package image
+#   include    - The path to the file to include, in the format "package/function"
+#
+# Outputs:
+#   No direct output, but creates files in the include directory and updates .gitignore
+#   if running within a git repository.
+#
+# Note:
+#   Requires an OCI client (docker by default) to be installed.
+#   The OCI client can be configured using the OCI_CLIENT environment variable.
+#   The image is expected to be tagged as 'latest' and follow the naming convention
+#   'repository/bashp-package:latest'.
+
+declare -r INCLUDE_DIR=${INCLUDE_DIR:-${INCLUDE_DIR:?must be set}}
+declare -r repository=${1:-${repository:?must be set}}
+declare -r include=${2:-${include:?must be set}}
+
+declare -r ociClient=${OCI_CLIENT:-docker}
+command -v "$ociClient" &>/dev/null || exit 1
+
+declare -r package=${include%%/*}
+declare -r image="$repository/bashp-$package:latest"
+if "$ociClient" manifest inspect "$image" &>/dev/null; then
+  mkdir -p "$INCLUDE_DIR/$package"
+
+  id=$("$ociClient" create "$image" none)
+  declare -r id
+
+  # shellcheck disable=SC2064
+  trap "'$ociClient' rm '$id' >/dev/null" EXIT
+
+  "$ociClient" cp "$id:/$include" "$INCLUDE_DIR/$include"
+
+  if command -v git &>/dev/null && git rev-parse --is-inside-work-tree &>/dev/null; then
+    declare -r function=${include##*/}
+    declare -r gitignore="$INCLUDE_DIR/$package/.gitignore"
+    grep -q "^$function$" "$INCLUDE_DIR/$package/.gitignore" 2>/dev/null ||
+      echo "$function" >> "$gitignore"
+  fi
+fi
