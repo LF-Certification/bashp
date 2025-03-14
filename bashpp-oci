@@ -1,4 +1,4 @@
-# shellcheck shell=bash
+#!/usr/bin/env bash
 
 # bashpp-oci
 # Extension handler for downloading packages from OCI container images.
