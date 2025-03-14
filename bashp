@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
-set -e
+set -eo pipefail
 
 bashpc "${1:-/dev/stdin}" | bash

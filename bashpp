@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -e
+set -eo pipefail
 
 # bashpp
 # A preprocessor for Bash scripts with support for including external functions.
