@@ -1,0 +1,5 @@
+# shellcheck shell=bash
+
+function test::test::hello_world() {
+    echo "Hello World, says the sub-package"
+}
