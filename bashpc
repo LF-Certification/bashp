@@ -4,7 +4,7 @@ set -eo pipefail
 script=${1:-/dev/stdin}
 include_dir="$(dirname "$script")/libs"
 
-mkdir -p "$include_dir" || include_dir=$(mktemp -d)
+mkdir -p "$include_dir" 2>/dev/null || include_dir=$(mktemp -d)
 
 INCLUDE_DIR="$include_dir" \
 bashpp "$script" | sed '1s,^#!.*$,#!/usr/bin/env bash,'
