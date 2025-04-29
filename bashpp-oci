@@ -5,10 +5,10 @@
 #
 # Description:
 #   This script serves as an extension handler for bashpp to pull packages from OCI container
-#   images.
-#   When bashpp encounters an OCI repository URL (default or oci:// prefix), it delegates the
-#   package retrieval to this handler. The handler pulls the package, extracts the specified
-#   include file, and installs it to the appropriate directory.
+#   images. When bashpp encounters an OCI repository URL (default or oci:// prefix), it delegates
+#   the package retrieval to this handler. The handler pulls the package, extracts the specified
+#   include file, and installs it to the appropriate directory. It supports nested package paths
+#   and maintains proper directory structure.
 #
 # Usage:
 #   bashpp-oci <repository> <include>
@@ -16,7 +16,8 @@
 #
 # Parameters:
 #   repository - The OCI repository containing the package image
-#   include    - The path to the file to include, in the format "package/function"
+#   include    - The path to the file to include, in the format "package/function" or
+#               "package/subpackage/function" for nested paths
 #
 # Outputs:
 #   No direct output, but creates files in the include directory and updates .gitignore
@@ -27,6 +28,8 @@
 #   The OCI client can be configured using the OCI_CLIENT environment variable.
 #   The image is expected to be tagged as 'latest' and follow the naming convention
 #   'repository/bashp-package:latest'.
+#   Supports nested package paths and maintains proper directory structure.
+#   Git integration has been improved to handle nested paths correctly.
 
 declare -r INCLUDE_DIR=${INCLUDE_DIR:-${INCLUDE_DIR:?must be set}}
 declare -r repository=${1:-${repository:?must be set}}

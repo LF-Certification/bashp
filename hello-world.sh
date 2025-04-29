@@ -13,4 +13,11 @@ test::test::hello
 # Rely on auto-include based on naming-convention "<package>::<function>"
 
 test::hello_world
+
+# Option 3
+# Use nested package paths for better organization
+
+#include test/test/hello
+test::test::hello
+
 test::test::hello_world
