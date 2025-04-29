@@ -143,8 +143,9 @@ function preprocess() {
       *#*::*) echo "$line" 1;;
       *::*)
         local include
-        grep -Eo '[a-zA-Z0-9_]+::[a-zA-Z0-9_]+' <<< "$line" |
-        	while read include; do include_once ${include//::/\/}; done
+
+        grep -Eo '[a-zA-Z0-9_]+(::[a-zA-Z0-9_]+)+' <<< "$line" |
+          while read include; do include_once ${include//::/\/}; done
         echo "$line"
       ;;
       "#include "*)

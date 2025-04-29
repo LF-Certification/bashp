@@ -59,7 +59,7 @@ mkdir -p "$INCLUDE_DIR/$package"
 cp "$cache/$include" "$INCLUDE_DIR/$include"
 
 if command -v git &>/dev/null && git rev-parse --is-inside-work-tree &>/dev/null; then
-  declare -r function=${include##*/}
+  declare -r function=${include#*/}
   declare -r gitignore="$INCLUDE_DIR/$package/.gitignore"
   grep -q "^$function$" "$gitignore" 2>/dev/null || echo "$function" >> "$gitignore"
 fi
