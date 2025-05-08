@@ -7,7 +7,8 @@
 #   This script serves as an extension handler for bashpp to pull packages from GitHub releases.
 #   When bashpp encounters a GitHub repository URL (gh:// prefix), it delegates the package
 #   retrieval to this handler. The handler downloads the latest release asset, extracts the
-#   specified include file, and installs it to the appropriate directory.
+#   specified include file, and installs it to the appropriate directory. It supports nested
+#   package paths and maintains proper directory structure.
 #
 # Usage:
 #   bashpp-gh <repository> <include>
@@ -15,7 +16,8 @@
 #
 # Parameters:
 #   repository - The GitHub repository in the format "owner/repo"
-#   include    - The path to the file to include, in the format "package/function"
+#   include    - The path to the file to include, in the format "package/function" or
+#               "package/subpackage/function" for nested paths
 #
 # Outputs:
 #   No direct output, but creates files in the cache directory and include directory.
@@ -26,6 +28,8 @@
 #   Requires either GH_TOKEN or GITHUB_TOKEN environment variable for GitHub API access.
 #   Will create cache directories as needed at BASHP_CACHE_DIR, XDG_CACHE_HOME/bashp or
 #   ~/.cache/bashp.
+#   Supports nested package paths and maintains proper directory structure.
+#   Git integration has been improved to handle nested paths correctly.
 
 declare -r INCLUDE_DIR=${INCLUDE_DIR:-${INCLUDE_DIR:?must be set}}
 declare -r repository=${1:-${repository:?must be set}}
@@ -59,7 +63,7 @@ mkdir -p "$INCLUDE_DIR/$package"
 cp "$cache/$include" "$INCLUDE_DIR/$include"
 
 if command -v git &>/dev/null && git rev-parse --is-inside-work-tree &>/dev/null; then
-  declare -r function=${include##*/}
+  declare -r function=${include#*/}
   declare -r gitignore="$INCLUDE_DIR/$package/.gitignore"
   grep -q "^$function$" "$gitignore" 2>/dev/null || echo "$function" >> "$gitignore"
 fi

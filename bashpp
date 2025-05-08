@@ -10,7 +10,8 @@ set -eo pipefail
 #   - Local directories specified by $BASHP_INCLUDE_DIRS
 #   - External sources via extension handlers (e.g., bashpp-oci, bashpp-gh)
 #   This enables modular script development by allowing scripts to dynamically include and use
-#   functions from external packages.
+#   functions from external packages. It supports nested package paths for better organization
+#   of functions (e.g., org::team::project::module::function).
 #
 # Usage:
 #   bashpp [file]
@@ -41,7 +42,7 @@ set -eo pipefail
 #
 # Notes:
 #   - Functions to be included should be placed in directories or repositories following the
-#     structure <package>/<function>
+#     structure <package>/<function> or <package>/<subpackage>/<function> for nested paths
 #   - For OCI registries, packages should be named 'bashp-<package>:latest'
 #   - For GitHub releases, assets should be named 'bashp-<package>.tar.gz'
 #   - The script automatically adds included functions to .gitignore when pulled from external
@@ -50,6 +51,7 @@ set -eo pipefail
 #   - GitHub releases are cached in $BASHP_CACHE_DIR to avoid repeated downloads
 #   - Repository URLs can include explicit protocol handlers (oci://, gh://)
 #   - If no protocol is specified in repository URL, OCI is assumed
+#   - Nested package paths are supported (e.g., test::test::hello)
 
 # include
 # Attempts to include a specified function from a given package.
@@ -140,9 +142,11 @@ function preprocess() {
   local line
   while IFS= read -r line; do
     case "$line" in
+      *#*::*) echo "$line" 1;;
       *::*)
         local include
-        grep -Eo '[a-zA-Z0-9_]+::[a-zA-Z0-9_]+' <<< "$line" |
+
+        grep -Eo '[a-zA-Z0-9_]+(::[a-zA-Z0-9_]+)+' <<< "$line" |
           while read include; do include_once ${include//::/\/}; done
         echo "$line"
       ;;

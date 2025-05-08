@@ -73,10 +73,35 @@ test::hello
 # Rely on auto-include based on naming-convention "<package>::<function>"
 
 test::hello_world
+
+# Option 3
+# Use nested package paths for better organization
+
+#include test/test/hello
+test::test::hello
+
+test::test::hello_world
 ```
 
-This script demonstrates two ways to include and use functions from external libraries or packages
-in your Bash+ scripts.
+This script demonstrates three ways to include and use functions from external libraries or packages
+in your Bash+ scripts. The third option shows how to use nested package paths for better organization
+of your code.
+
+### Package Path Resolution
+
+Bash+ supports nested package paths, allowing for better organization of your code. For example:
+- `test::hello` - Basic package path
+- `test::test::hello` - Nested package path
+- `org::team::project::module::function` - Deeply nested package path
+
+This hierarchical structure helps organize related functions and makes the codebase more maintainable.
+
+### Git Integration
+
+Bash+ automatically manages your `.gitignore` file:
+- Dynamically adds included functions to prevent unintended commits
+- Supports both GitHub and OCI package sources
+- Maintains a clean repository by tracking only necessary files
 
 ## Contributing
 
