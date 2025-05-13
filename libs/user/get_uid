@@ -1,6 +1,6 @@
 # shellcheck shell=bash
 
-# user::uid
+# user::get_uid
 # Retrieves the user ID (UID) of a specified user.
 #
 # Description:
@@ -9,7 +9,7 @@
 #   that need to handle permissions or user-related operations based on user UID.
 #
 # Usage:
-#   user::uid <username>
+#   user::get_uid <username>
 #
 # Parameters:
 #   username - The username whose UID is to be retrieved. Optional, defaults to the current user.
@@ -18,9 +18,9 @@
 #   The user ID of the specified or default user.
 #
 # Example:
-#   user::uid "exampleUser"  # Outputs the UID of 'exampleUser'
-#   user::uid               # Outputs the UID of the current user
-function user::uid() {
+#   user::get_uid "exampleUser" # Outputs the UID of 'exampleUser'
+#   user::get_uid               # Outputs the UID of the current user
+function user::get_uid() {
   local username=${1:-${user:-$(whoami)}}
   getent passwd "$username" | cut -d: -f3
 }
