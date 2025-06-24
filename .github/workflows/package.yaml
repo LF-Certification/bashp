@@ -33,7 +33,7 @@ jobs:
           LABEL org.opencontainers.image.source https://github.com/${{ github.repository }}
           
           ARG PACKAGE
-          COPY ${PACKAGE}/* /${PACKAGE}/
+          COPY --parents ${PACKAGE}/* /${PACKAGE}/
           EOF
 
       - name: Build and push Docker image
