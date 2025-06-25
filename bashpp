@@ -65,34 +65,44 @@ set -eo pipefail
 #
 # Description:
 #   This function checks if the specified function is already included. If not, it searches for the
-#   function file within directories specified by $BASHP_INCLUDE_DIRS. Failing to find the file locally,
-#   it attempts to pull the package using Docker from repositories listed in $BASHP_INCLUDE_REPOS
-#   (defaults to ghcr.io/lf-certification if unset). If the function file is still missing after
-#   the pull attempt, an error is printed. Otherwise, the function is marked as included and its
-#   file is sent for preprocessing. Additionally, if the function is pulled from an OCI registry
-#   and Git is available, the function's name is added to a `.gitignore` file within the package
-#   directory to prevent it from being accidentally committed to version control.
+#   function file within directories specified by $BASHP_INCLUDE_DIRS. Failing to find the file
+#   locally, it attempts to pull the package using extension handlers from repositories listed in
+#   $BASHP_INCLUDE_REPOS (defaults to ghcr.io/lf-certification if unset). The function supports
+#   multiple repository types:
+#   - OCI registries (default prefix or oci://) using bashpp-oci handler
+#   - GitHub releases (gh://) using bashpp-gh handler
+#   If the function file is still missing after the pull attempt, an error is printed. Otherwise,
+#   the function is marked as included and its file is sent for preprocessing. Additionally, if the
+#   function is pulled from an external source and Git is available, the function's name is added to
+#   a `.gitignore` file within the package directory to prevent it from being accidentally committed
+#   to version control.
 function include() {
   local include=$1
+  local fetch=${2:-true}
 
   local path
-  IFS=:; for directory in $BASHP_INCLUDE_DIRS; do
+  IFS=:
+  for directory in $BASHP_INCLUDE_DIRS; do
     path="$directory/$include"
     [[ -f "$path" ]] && break
   done
 
-  if [[ ! -f "$path" ]]; then
-    IFS=,; for repository in $BASHP_INCLUDE_REPOS; do
+  if [[ -f "$path" ]]; then
+    preprocess "$path"
+  elif [[ "$fetch" == true ]]; then
+    IFS=,
+    for repository in $BASHP_INCLUDE_REPOS; do
       local handler=${repository%%://*}
       [[ "$handler" != "$repository" ]] || handler=oci
       INCLUDE_DIR=$INCLUDE_DIR BASHP_CACHE_DIR="$BASHP_CACHE_DIR" \
         "bashpp-$handler" "${repository#*://}" "$include" >/dev/null
     done
+
+    include "$include" false
+  else
+    echo "bashpp: failed to include $include" >&2
+    return 1
   fi
-
-  [[ ! -f "$path" ]] && echo "bashpp: failed to include $include" >&2 && return 1
-
-  preprocess "$path"
 }
 
 # include_once
