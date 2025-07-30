@@ -1,0 +1,49 @@
+# shellcheck shell=bash
+
+# ssl::create_tls_certificate
+# Creates a self-signed TLS certificate and optionally updates the system's CA certificates.
+#
+# Description:
+#   This function generates a self-signed TLS certificate using OpenSSL. It creates both a private key
+#   and a certificate file. Optionally, it can update the system's CA certificates with the newly
+#   created certificate using sudo privileges.
+#
+# Usage:
+#   ssl::create_tls_certificate [path] [fqdn] [update] [wildcard]
+#
+# Parameters:
+#   path - The directory where the certificate files will be saved. Default is the current directory.
+#   fqdn - The Fully Qualified Domain Name for the certificate. Default is 'web.local'.
+#   update - Boolean flag to determine if the system's CA certificates should be updated. Default is true.
+#   wildcard - Boolean flag to include all subdomains in the certificate. Default is false.
+#
+# Outputs:
+#   Creates two files: 'tls.key' (private key) and 'tls.crt' (certificate) in the specified path.
+#   If update is true, it also copies the certificate to the system's CA certificates directory
+#   and updates the CA certificates using sudo.
+#
+# Example:
+#   ssl::create_tls_certificate /etc/ssl example.com false true
+#
+# Note:
+#   This function requires OpenSSL to be installed on the system.
+#   If the update parameter is set to true, it requires sudo privileges to update system CA
+function ssl::create_tls_certificate() {
+  local path="${1:-${path:-.}}"
+  local fqdn="${2:-${fqdn:-web.local}}"
+  local update="${3:-${update:-true}}"
+  local wildcard="${4:-${wildcard:-false}}"
+
+  local san="DNS:$fqdn"
+  if [[ "$wildcard" == true ]]; then
+    san="DNS:$fqdn,DNS:*.$fqdn"
+  fi
+
+  openssl req -x509 -noenc -days 365 -newkey rsa:2048 -keyout "$path/tls.key" -out "$path/tls.crt" \
+    -subj "/CN=$fqdn" -addext "subjectAltName=$san"
+
+  if [[ "$update" == true ]]; then
+    sudo cp "$path/tls.crt" "/usr/local/share/ca-certificates/${fqdn}.crt"
+    sudo update-ca-certificates
+  fi
+}
