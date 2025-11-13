@@ -1,0 +1,109 @@
+name: Test Functions
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'libs/**'
+  workflow_call:
+    outputs:
+      packages:
+        description: All packages
+        value: ${{ jobs.setup.outputs.packages }}
+      functions:
+        description: All functions with tests
+        value: ${{ jobs.setup.outputs.functions }}
+      results:
+        description: Packages with some failed tests
+        value: ${{ jobs.test.outputs.results }}
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      packages: ${{ steps.packages.outputs.matrix }}
+      functions: ${{ steps.functions.outputs.matrix }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get all packages
+        id: packages
+        shell: bash
+        run: |
+          json=$(
+            (
+              for directory in $(find libs/ -mindepth 1 -maxdepth 1 -type d); do
+                echo -n '"'"${directory#*/}"'",'
+              done
+              echo '""'
+            ) | sed -E 's/,?""$//'
+          )
+          echo "matrix={\"package\":[$json]}" >> $GITHUB_OUTPUT
+
+      - name: Get all functions
+        id: functions
+        shell: bash
+        run: |
+          json=$(
+            (
+              for directory in $(find libs/ -mindepth 1 -maxdepth 1 -type d); do
+                package="${directory#*/}"
+
+                for file in $(find "libs/$package" -type f -and \
+                                              ! -name '\*' -and \
+                                              ! -wholename '*/tests/*'); do
+                  directory=$(dirname "$file")
+                  fileName=$(basename "$file")
+                  if [[ ! -d "$directory/tests/$fileName" || ! -f "$directory/tests/$fileName/test" ]]; then
+                    continue
+                  fi
+
+                  functionName=${file#libs/*}
+                  functionName=${functionName//\//::}
+
+                  echo -n '{"package":"'"$package"'","function":"'"$functionName"'"},'
+                done
+              done
+              echo '""'
+            ) | sed -E 's/,?""$//'
+          )
+
+          echo "matrix={\"function\":[$json]}" >> $GITHUB_OUTPUT
+
+  test:
+    runs-on: ubuntu-latest
+    outputs:
+      results: ${{ toJson(steps.test.outputs) }}
+    needs: [setup]
+    if: needs.setup.outputs.functions != '{"function":[]}'
+    strategy:
+      matrix: ${{ fromJson(needs.setup.outputs.functions) }}
+      fail-fast: false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v3
+
+      - name: Test function
+        id: test
+        shell: bash
+        run: |
+          export PATH=".:$PATH"
+          export BASHP_INCLUDE_DIRS="libs"
+
+          set +e
+          output=$(bashpt "${{ matrix.function.function }}" 2>&1)
+          exitCode=$?
+          echo "$output"
+
+          if [[ $exitCcode -eq 0 ]]; then
+            echo "✅ Test passed for ${{ matrix.function.function }}"
+          elif [[ $exitCcode -eq 127 ]]; then
+            echo "🔍 No test defined for ${{ matrix.function.function }} (acceptable)"
+          else
+            echo "❌ Test failed for ${{ matrix.function.function }} (exit code: $exitCcode)"
+            echo "${{ matrix.function.package }}=false" >> $GITHUB_OUTPUT
+          fi

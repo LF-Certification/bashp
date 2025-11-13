@@ -1,0 +1,57 @@
+# shellcheck shell=bash
+#
+# Copyright 2025 The Linux Foundation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+# core::test::prep_step
+# Executes a preparation step and reports success/failure with distinct formatting.
+#
+# Description:
+#   This function executes a command intended for test setup/preparation (e.g., creating users,
+#   setting up files, etc.). Unlike assertions, preparation steps are not test validations
+#   themselves, but are necessary for the test to run. Failures are reported with a distinct
+#   visual indicator to differentiate them from assertion failures.
+#
+# Usage:
+#   core::test::prep_step <command> [args...]
+#
+# Parameters:
+#   command - The command or function to execute.
+#   args... - Optional arguments to pass to the command.
+#
+# Returns:
+#   Returns 0 if the command succeeds, non-zero if it fails.
+#
+# Example:
+#   core::test::prep_step useradd -m testuser
+#   core::test::prep_step sudo mkdir -p /tmp/testdir
+function core::test::prep_step() {
+  local output
+  output=$("$@" 2>&1)
+  local exitCode=$?
+  if [ $exitCode -eq 0 ]; then
+    echo "⚙️  Preparation step succeeded: '$*'"
+    return 0
+  else
+    echo "⚠️  Preparation step failed: command '$*' exited with status $exitCode" >&2
+    if [ -n "$output" ]; then
+      echo "---- Command output ----" >&2
+      echo "$output" >&2
+      echo "-----------------------" >&2
+    fi
+    return $exitCode
+  fi
+}
+

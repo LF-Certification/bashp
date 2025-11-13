@@ -1,0 +1,45 @@
+# shellcheck shell=bash
+#
+# Copyright 2025 The Linux Foundation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+# core::test::assert_failure
+# Asserts that a command exits with a non-zero exit code.
+#
+# Description:
+#   This function executes a command and verifies that it exits with a non-zero
+#   status code (indicating failure).
+#
+# Usage:
+#   core::test::assert_failure <command> [args...]
+#
+# Parameters:
+#   command - The command or function to execute.
+#   args... - Optional arguments to pass to the command.
+#
+# Example:
+#   core::test::assert_failure ls /nonexistent
+function core::test::assert_failure() {
+  local exitCode
+  if ! "$@" &>/dev/null; then
+    exitCode=$?
+    echo "✅ Assertion passed: command '$*' exited with status $exitCode"
+    return 0
+  else
+    exitCode=$?
+    echo "⛔ Assertion failed: command '$*' exited with status $exitCode (expected non-zero)" >&2
+    return 1
+  fi
+}
