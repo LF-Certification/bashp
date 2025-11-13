@@ -96,14 +96,14 @@ jobs:
 
           set +e
           output=$(bashpt "${{ matrix.function.function }}" 2>&1)
-          exitCcode=$?
+          exitCode=$?
           echo "$output"
 
-          if [[ $exitCcode -eq 0 ]]; then
+          if [[ $exitCode -eq 0 ]]; then
             echo "✅ Test passed for ${{ matrix.function }}"
-          elif [[ $exitCcode -eq 127 ]]; then
+          elif [[ $exitCode -eq 127 ]]; then
             echo "🔍 No test defined for ${{ matrix.function }} (acceptable)"
           else
-            echo "❌ Test failed for ${{ matrix.function }} (exit code: $exitCcode)"
+            echo "❌ Test failed for ${{ matrix.function }} (exit code: $exitCode)"
             echo "${{ matrix.function.package }}=false" >> $GITHUB_OUTPUT
           fi
