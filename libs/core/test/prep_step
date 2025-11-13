@@ -39,11 +39,11 @@
 #   core::test::prep_step sudo mkdir -p /tmp/testdir
 function core::test::prep_step() {
   if "$@" &>/dev/null; then
-    echo "⚙️  Preparational step succeeded: '$*'"
+    echo "⚙️  Preparation step succeeded: '$*'"
     return 0
   else
     local exitCode=$?
-    echo "⚠️  Preparational step failed: command '$*' exited with status $exitCode" >&2
+    echo "⚠️  Preparation step failed: command '$*' exited with status $exitCode" >&2
     return $exitCode
   fi
 }
