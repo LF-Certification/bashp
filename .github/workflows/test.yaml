@@ -99,11 +99,11 @@ jobs:
           exitCode=$?
           echo "$output"
 
-          if [[ $exitCode -eq 0 ]]; then
-            echo "✅ Test passed for ${{ matrix.function }}"
-          elif [[ $exitCode -eq 127 ]]; then
-            echo "🔍 No test defined for ${{ matrix.function }} (acceptable)"
+          if [[ $exitCcode -eq 0 ]]; then
+            echo "✅ Test passed for ${{ matrix.function.function }}"
+          elif [[ $exitCcode -eq 127 ]]; then
+            echo "🔍 No test defined for ${{ matrix.function.function }} (acceptable)"
           else
-            echo "❌ Test failed for ${{ matrix.function }} (exit code: $exitCode)"
+            echo "❌ Test failed for ${{ matrix.function.function }} (exit code: $exitCcode)"
             echo "${{ matrix.function.package }}=false" >> $GITHUB_OUTPUT
           fi
