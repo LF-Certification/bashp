@@ -93,7 +93,7 @@ Bash+ provides a comprehensive set of assertion functions with visual feedback:
 - `core::test::assert_eventually` - Retries a condition until it succeeds or times out (useful for async operations)
 
 ### Test Preparation
-- `core::test::prep_step` - Executes preparational steps (like creating test users or files) with distinct visual feedback
+- `core::test::prep_step` - Executes preparation steps (like creating test users or files) with distinct visual feedback
 
 Visual indicators:
 - ✅ Passed assertions
