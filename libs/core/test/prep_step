@@ -16,11 +16,11 @@
 #
 
 # core::test::prep_step
-# Executes a preparational step and reports success/failure with distinct formatting.
+# Executes a preparation step and reports success/failure with distinct formatting.
 #
 # Description:
 #   This function executes a command intended for test setup/preparation (e.g., creating users,
-#   setting up files, etc.). Unlike assertions, preparational steps are not test validations
+#   setting up files, etc.). Unlike assertions, preparation steps are not test validations
 #   themselves, but are necessary for the test to run. Failures are reported with a distinct
 #   visual indicator to differentiate them from assertion failures.
 #
