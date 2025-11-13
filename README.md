@@ -21,6 +21,8 @@ functionalities with ease.
   advanced features.
 - **Preprocessing**: A preprocessing step that allows for dynamic inclusion of scripts and
   packages, supporting multiple package sources and enhancing modularity.
+- **Built-in Testing Framework**: Simple, convention-based testing with container isolation and
+  visual feedback (✅ ⛔ ⚙️ ⚠️). [Learn more →](docs/TESTING.md)
 - **Git Integration**: Automatically adds included functions to `.gitignore` when pulling from
   external sources, preventing unintended commits.
 
@@ -86,6 +88,21 @@ test::test::hello_world
 This script demonstrates three ways to include and use functions from external libraries or packages
 in your Bash+ scripts. The third option shows how to use nested package paths for better organization
 of your code.
+
+### Testing Your Code
+
+Bash+ includes a built-in testing framework that makes it easy to test your functions:
+
+```bash
+# Test a specific function
+bashpt user::get_uid
+
+# Run tests locally without container isolation
+BASHPT_LOCAL=true bashpt user::get_uid
+```
+
+Tests are automatically discovered based on naming conventions and run in isolated Docker containers
+by default. For more details, see the [Testing Documentation](docs/TESTING.md).
 
 ### Package Path Resolution
 
