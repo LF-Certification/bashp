@@ -40,10 +40,10 @@ function core::test::assert_eventually() {
   local timeout=${timeout:-}
 
   if [[ -z "$timeout" && -n "$1" && "$1" =~ ^[0-9]+$ ]]; then
-    timeout=$1
+    timeout="${1}s"
     shift
   elif [[ -z "$timeout" ]]; then
-    timeout=5
+    timeout=5s
   fi
 
   if timeout "${timeout}" bash -s -- "$@" <<'EOF' &>/dev/null; then
