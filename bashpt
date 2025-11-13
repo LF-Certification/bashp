@@ -33,7 +33,13 @@ if [[ -d "$testPath" && -f "$testPath/test" ]]; then
     bash -c "$test" || returnCode=$?
   else
     # Run tests in Docker container
-    arguments=(-ti --rm)
+    arguments=(--rm)
+
+    # Only add -ti if we have a TTY (not in CI)
+    if [ -t 0 ]; then
+      arguments+=(-ti)
+    fi
+
     image="${BASHPT_IMAGE:-ubuntu:latest}"
 
     # Add user override if specified
