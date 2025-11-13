@@ -1,4 +1,4 @@
-name: Build and Push Package Images
+name: Build and Push Packages
 
 on:
   workflow_dispatch:
@@ -10,102 +10,15 @@ on:
   workflow_call:
 
 jobs:
-  setup:
-    runs-on: ubuntu-latest
-    outputs:
-      packages: ${{ steps.packages.outputs.matrix }}
-      functions: ${{ steps.functions.outputs.matrix }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Get all packages
-        id: packages
-        shell: bash
-        run: |
-          json=$(
-            (
-              for directory in $(find libs/ -mindepth 1 -maxdepth 1 -type d); do
-                echo -n '"'"${directory#*/}"'",'
-              done
-              echo '""'
-            ) | sed -E 's/,?""$//'
-          )
-          echo "matrix={\"package\":[$json]}" >> $GITHUB_OUTPUT
-
-      - name: Get all functions
-        id: functions
-        shell: bash
-        run: |
-          json=$(
-            (
-              for directory in $(find libs/ -mindepth 1 -maxdepth 1 -type d); do
-                package="${directory#*/}"
-
-                for file in $(find "libs/$package" -type f -and \
-                                              ! -name '\*' -and \
-                                              ! -wholename '*/tests/*'); do
-                  directory=$(dirname "$file")
-                  fileName=$(basename "$file")
-                  if [[ ! -d "$directory/tests/$fileName" || ! -f "$directory/tests/$fileName/test" ]]; then
-                    continue
-                  fi
-
-                  functionName=${file#libs/*}
-                  functionName=${functionName//\//::}
-
-                  echo -n '{"package":"'"$package"'","function":"'"$functionName"'"},'
-                done
-              done
-              echo '""'
-            ) | sed -E 's/,?""$//'
-          )
-
-          echo "matrix={\"function\":[$json]}" >> $GITHUB_OUTPUT
-
   test:
-    runs-on: ubuntu-latest
-    outputs:
-      results: ${{ toJson(steps.test.outputs) }}
-    needs: [setup]
-    if: needs.setup.outputs.functions != '{"include":[]}'
-    strategy:
-      matrix: ${{ fromJson(needs.setup.outputs.functions) }}
-      fail-fast: false
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Docker
-        uses: docker/setup-buildx-action@v3
-
-      - name: Test function
-        id: test
-        shell: bash
-        run: |
-          export PATH=".:$PATH"
-          export BASHP_INCLUDE_DIRS="libs"
-
-          set +e
-          output=$(bashpt "${{ matrix.function.function }}" 2>&1)
-          exitCcode=$?
-          echo "$output"
-
-          if [[ $exitCode -eq 0 ]]; then
-            echo "✅ Test passed for ${{ matrix.function }}"
-          elif [[ $exitCode -eq 127 ]]; then
-            echo "🔍 No test defined for ${{ matrix.function }} (acceptable)"
-          else
-            echo "❌ Test failed for ${{ matrix.function }} (exit code: $exitCode)"
-            echo "${{ matrix.function.package }}=false" >> $GITHUB_OUTPUT
-          fi
+    uses: ./.github/workflows/test.yaml
 
   package:
     runs-on: ubuntu-latest
-    needs: [setup, test]
-    if: always() && needs.setup.outputs.packages != '{"include":[]}'
+    needs: [test]
+    if: always() && needs.test.outputs.packages != '{"package":[]}'
     strategy:
-      matrix: ${{ fromJson(needs.setup.outputs.packages) }}
+      matrix: ${{ fromJson(needs.test.outputs.packages) }}
       fail-fast: false
     steps:
       - name: Checkout code
