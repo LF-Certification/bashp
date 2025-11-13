@@ -14,7 +14,7 @@ on:
         description: All functions with tests
         value: ${{ jobs.setup.outputs.functions }}
       results:
-        description: Packges with some failed tests
+        description: Packages with some failed tests
         value: ${{ jobs.test.outputs.results }}
 
 jobs:
