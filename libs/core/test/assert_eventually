@@ -46,7 +46,7 @@ function core::test::assert_eventually() {
     timeout=5s
   fi
 
-  if timeout "${timeout}" bash -s -- "$@" <<'EOF' &>/dev/null; then
+  if timeout "${timeout}" bash <<EOF &>/dev/null; then
 until "$@"; do
   sleep 1
 done
