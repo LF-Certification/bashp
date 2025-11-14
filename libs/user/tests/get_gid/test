@@ -43,11 +43,12 @@ function user::tests::get_gid::test() {
   user=$testUser core::test::assert_equals 0 "$(user::get_gid)"
 
   # Test with custom user
-  core::test::prep_step $sudoCommand useradd -g 5000 testuser >/dev/null 2>&1 || core::test::prep_step $sudoCommand groupadd -g 5000 testgroup >/dev/null 2>&1 && core::test::prep_step $sudoCommand useradd -g testgroup testuser >/dev/null
+  core::test::prep_step $sudoCommand groupadd -g 5000 testgroup >/dev/null
+  core::test::prep_step $sudoCommand useradd -g testgroup testuser >/dev/null
   core::test::assert_success user::get_gid testuser
   core::test::assert_equals 5000 "$(user::get_gid testuser)"
   core::test::prep_step $sudoCommand userdel -r testuser >/dev/null
-  core::test::prep_step $sudoCommand groupdel testgroup >/dev/null 2>&1 || true
+  core::test::prep_step $sudoCommand groupdel testgroup >/dev/null
 
   # Test with non-existent user
   core::test::assert_failure user::get_gid non_existent_user
