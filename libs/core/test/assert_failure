@@ -15,6 +15,8 @@
 # limitations under the License.
 #
 
+#include core/test/run_without_exit_on_error
+
 # core::test::assert_failure
 # Asserts that a command exits with a non-zero exit code.
 #
@@ -32,17 +34,8 @@
 # Example:
 #   core::test::assert_failure ls /nonexistent
 function core::test::assert_failure() {
-  local restoreExitOnError=false
-  if [[ $- =~ e ]]; then
-    restoreExitOnError=true
-  fi
-
-  set +e
-  "$@" &>/dev/null
-  local exitCode=$?
-  if [[ $restoreExitOnError == true ]]; then
-    set -e
-  fi
+  local exitCode
+  exitCode=$(core::test::run_without_exit_on_error "$@")
 
   if [[ $exitCode -ne 0 ]]; then
     echo "✅ Assertion passed: command '$*' exited with status $exitCode"

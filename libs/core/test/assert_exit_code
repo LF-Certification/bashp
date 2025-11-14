@@ -15,6 +15,8 @@
 # limitations under the License.
 #
 
+#include core/test/run_without_exit_on_error
+
 # core::test::assert_exit_code
 # Asserts that a command exits with a specific exit code.
 #
@@ -37,17 +39,8 @@ function core::test::assert_exit_code() {
   local expectedCode=${1:-${expectedCode:?must be set}}
   shift
 
-  local restoreExitOnError=false
-  if [[ $- =~ e ]]; then
-    restoreExitOnError=true
-  fi
-
-  set +e
-  "$@" &>/dev/null
-  local actualCode=$?
-  if [[ $restoreExitOnError == true ]]; then
-    set -e
-  fi
+  local actualCode
+  actualCode=$(core::test::run_without_exit_on_error "$@")
 
   if [[ $actualCode -eq $expectedCode ]]; then
     echo "✅ Assertion passed: command '$*' exited with status $actualCode"
