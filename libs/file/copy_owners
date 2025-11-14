@@ -48,10 +48,10 @@ function file::copy_owners() {
   local user; user=$(stat -c '%U' "$source")
   local group; group=$(stat -c '%G' "$source")
 
-  local command="sudo chown"
+  local command=(sudo chown)
   if [[ "$recursive" == "true" ]]; then
-    command+=" -R"
+    command+=(-R)
   fi
 
-  $command "$user:$group" "$destination"
+  "${command[@]}" "$user:$group" "$destination"
 }
