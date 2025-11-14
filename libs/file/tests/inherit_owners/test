@@ -1,0 +1,103 @@
+# shellcheck shell=bash
+#
+# Copyright 2025 The Linux Foundation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+#include file/inherit_owners
+#include core/test/assert_equals
+#include core/test/assert_success
+#include core/test/prep_step
+
+function file::tests::inherit_owners::test() {
+  if ! command -v sudo &>/dev/null; then
+    apt-get update -qq && apt-get install -y -qq sudo
+  fi
+
+  local sudoCommand=""
+  if [[ $EUID -ne 0 ]] && command -v sudo &>/dev/null; then
+    sudoCommand="sudo"
+  fi
+
+  local testDir="/tmp/parent_dir_$$"
+  local testFile="$testDir/child_file"
+  
+  core::test::prep_step mkdir -p "$testDir"
+  core::test::prep_step $sudoCommand chown root:root "$testDir"
+  core::test::prep_step touch "$testFile"
+  
+  core::test::assert_success file::inherit_owners "$testFile"
+  
+  local fileUser
+  fileUser=$(stat -c '%U' "$testFile")
+  core::test::assert_equals "root" "$fileUser"
+  
+  local fileGroup
+  fileGroup=$(stat -c '%G' "$testFile")
+  core::test::assert_equals "root" "$fileGroup"
+  
+  local nestedDir="$testDir/nested"
+  core::test::prep_step mkdir -p "$nestedDir"
+  
+  core::test::assert_success file::inherit_owners "$nestedDir"
+  
+  local nestedUser
+  nestedUser=$(stat -c '%U' "$nestedDir")
+  core::test::assert_equals "root" "$nestedUser"
+  
+  local deepDir="/tmp/deep_parent_$$"
+  local level1="$deepDir/level1"
+  local level2="$level1/level2"
+  local level3="$level2/level3"
+  local deepFile="$level3/deep_file"
+  
+  core::test::prep_step mkdir -p "$level3"
+  core::test::prep_step $sudoCommand chown -R root:root "$deepDir"
+  core::test::prep_step touch "$deepFile"
+  
+  core::test::assert_success file::inherit_owners "$deepFile"
+  
+  local deepFileUser
+  deepFileUser=$(stat -c '%U' "$deepFile")
+  core::test::assert_equals "root" "$deepFileUser"
+  
+  local deepFileGroup
+  deepFileGroup=$(stat -c '%G' "$deepFile")
+  core::test::assert_equals "root" "$deepFileGroup"
+  
+  local parentDir2="/tmp/parent_dir2_$$"
+  local childDir="$parentDir2/child"
+  local currentUser
+  currentUser=$(whoami)
+  
+  core::test::prep_step mkdir -p "$parentDir2"
+  core::test::prep_step $sudoCommand chown nobody:nogroup "$parentDir2" 2>/dev/null || core::test::prep_step $sudoCommand chown nobody:nobody "$parentDir2"
+  core::test::prep_step mkdir "$childDir"
+  core::test::prep_step $sudoCommand chown "$currentUser:$currentUser" "$childDir"
+  
+  core::test::assert_success file::inherit_owners "$childDir"
+  
+  local childDirUser
+  childDirUser=$(stat -c '%U' "$childDir")
+  core::test::assert_equals "nobody" "$childDirUser"
+  
+  local nestedFile="$testDir/nested/file_in_nested"
+  core::test::prep_step touch "$nestedFile"
+  
+  core::test::assert_success file::inherit_owners "$nestedFile"
+  
+  local nestedFileUser
+  nestedFileUser=$(stat -c '%U' "$nestedFile")
+  core::test::assert_equals "root" "$nestedFileUser"
+}

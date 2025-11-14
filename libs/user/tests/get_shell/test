@@ -15,43 +15,40 @@
 # limitations under the License.
 #
 
-#include user/get_home
+#include user/get_shell
 #include core/test/assert_equals
 #include core/test/assert_success
 #include core/test/assert_failure
+#include core/test/assert_contains
 #include core/test/prep_step
 
-function user::tests::get_home::test() {
+function user::tests::get_shell::test() {
   local sudoCommand=""
   if [[ $EUID -ne 0 ]] && command -v sudo &>/dev/null; then
     sudoCommand="sudo"
   fi
 
   # Test with explicit username
-  core::test::assert_success user::get_home root
-  core::test::assert_equals /root "$(user::get_home root)"
+  core::test::assert_success user::get_shell root
+  local rootShell
+  rootShell=$(user::get_shell root)
+  core::test::assert_contains "$rootShell" "sh"
 
   # Test with no argument (defaults to current user)
-  core::test::assert_success user::get_home
-  core::test::assert_equals "$HOME" "$(user::get_home)"
+  core::test::assert_success user::get_shell
+  core::test::assert_contains "$(user::get_shell)" "sh"
 
   # Test with $user environment variable
   local testUser="root"
-  user=$testUser core::test::assert_success user::get_home
-  user=$testUser core::test::assert_equals /root "$(user::get_home)"
+  user=$testUser core::test::assert_success user::get_shell
+  user=$testUser core::test::assert_contains "$(user::get_shell)" "sh"
 
-  # Test with custom user
-  core::test::prep_step $sudoCommand useradd -m testuser >/dev/null
-  core::test::assert_success user::get_home testuser
-  core::test::assert_equals /home/testuser "$(user::get_home testuser)"
-  core::test::prep_step $sudoCommand userdel -r testuser >/dev/null
-
-  # Test with custom home directory
-  core::test::prep_step $sudoCommand useradd -m -d /tmp/testuser testuser >/dev/null
-  core::test::assert_success user::get_home testuser
-  core::test::assert_equals /tmp/testuser "$(user::get_home testuser)"
+  # Test with custom user and shell
+  core::test::prep_step $sudoCommand useradd -s /bin/bash testuser >/dev/null
+  core::test::assert_success user::get_shell testuser
+  core::test::assert_equals /bin/bash "$(user::get_shell testuser)"
   core::test::prep_step $sudoCommand userdel -r testuser >/dev/null
 
   # Test with non-existent user
-  core::test::assert_failure user::get_home non_existent_user
+  core::test::assert_failure user::get_shell non_existent_user
 }
