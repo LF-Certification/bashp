@@ -39,7 +39,6 @@ function core::test::assert_success() {
   set +e
   "$@" &>/dev/null
   local exitCode=$?
-  
   if [[ $restoreExitOnError == true ]]; then
     set -e
   fi
