@@ -31,13 +31,23 @@
 # Example:
 #   core::test::assert_success ls /tmp
 function core::test::assert_success() {
-  local exitCode
-  if "$@" &>/dev/null; then
-    exitCode=0
+  local restoreExitOnError=false
+  if [[ $- =~ e ]]; then
+    restoreExitOnError=true
+  fi
+
+  set +e
+  "$@" &>/dev/null
+  local exitCode=$?
+  
+  if [[ $restoreExitOnError == true ]]; then
+    set -e
+  fi
+
+  if [[ $exitCode -eq 0 ]]; then
     echo "✅ Assertion passed: command '$*' exited with status $exitCode"
     return 0
   else
-    exitCode=$?
     echo "⛔ Assertion failed: command '$*' exited with status $exitCode (expected 0)" >&2
     return 1
   fi

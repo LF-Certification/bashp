@@ -37,8 +37,18 @@ function core::test::assert_exit_code() {
   local expectedCode=${1:-${expectedCode:?must be set}}
   shift
 
+  local restoreExitOnError=false
+  if [[ $- =~ e ]]; then
+    restoreExitOnError=true
+  fi
+
+  set +e
   "$@" &>/dev/null
   local actualCode=$?
+  
+  if [[ $restoreExitOnError == true ]]; then
+    set -e
+  fi
 
   if [[ $actualCode -eq $expectedCode ]]; then
     echo "✅ Assertion passed: command '$*' exited with status $actualCode"
