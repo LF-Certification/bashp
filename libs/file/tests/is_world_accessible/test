@@ -1,0 +1,84 @@
+# shellcheck shell=bash
+#
+# Copyright 2025 The Linux Foundation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+#include file/is_world_accessible
+#include core/test/assert_success
+#include core/test/assert_failure
+#include core/test/assert_exit_code
+#include core/test/prep_step
+
+function file::tests::is_world_accessible::test() {
+  local testDir="/tmp/test_accessible_dir_$$"
+  local testFile="$testDir/test_file"
+  
+  core::test::prep_step mkdir -p "$testDir"
+  core::test::prep_step touch "$testFile"
+  
+  # Test with world-readable file in accessible directory
+  core::test::prep_step chmod 755 "$testDir"
+  core::test::prep_step chmod 644 "$testFile"
+  core::test::assert_success file::is_world_accessible "$testFile"
+  
+  # Test with file in directory without world access
+  core::test::prep_step chmod 750 "$testDir"
+  core::test::assert_exit_code 2 file::is_world_accessible "$testFile"
+  
+  # Test with world-readable file again
+  core::test::prep_step chmod 755 "$testDir"
+  core::test::prep_step chmod 644 "$testFile"
+  core::test::assert_success file::is_world_accessible "$testFile"
+  
+  # Test directory without world access
+  core::test::prep_step chmod 700 "$testDir"
+  core::test::assert_exit_code 2 file::is_world_accessible "$testDir"
+  
+  # Test deeply nested file
+  local nestedDir="$testDir/level1/level2/level3"
+  local nestedFile="$nestedDir/deep_file"
+  core::test::prep_step mkdir -p "$nestedDir"
+  core::test::prep_step touch "$nestedFile"
+  
+  core::test::prep_step chmod -R 755 "$testDir"
+  core::test::prep_step chmod 644 "$nestedFile"
+  core::test::assert_success file::is_world_accessible "$nestedFile"
+  
+  # Test with restricted parent at level1
+  core::test::prep_step chmod 750 "$testDir/level1"
+  core::test::assert_exit_code 2 file::is_world_accessible "$nestedFile"
+  
+  # Test with restricted parent at level2
+  core::test::prep_step chmod 755 "$testDir/level1"
+  core::test::prep_step chmod 700 "$testDir/level1/level2"
+  core::test::assert_exit_code 2 file::is_world_accessible "$nestedFile"
+  
+  # Test with all directories accessible
+  core::test::prep_step chmod -R 755 "$testDir"
+  core::test::prep_step chmod 644 "$nestedFile"
+  core::test::assert_success file::is_world_accessible "$nestedFile"
+  
+  # Test with non-world-readable file
+  core::test::prep_step chmod 600 "$nestedFile"
+  core::test::assert_exit_code 1 file::is_world_accessible "$nestedFile"
+  
+  # Test accessible directory
+  core::test::prep_step chmod 755 "$testDir"
+  core::test::assert_success file::is_world_accessible "$testDir"
+  
+  # Test non-accessible directory
+  core::test::prep_step chmod 700 "$testDir"
+  core::test::assert_exit_code 2 file::is_world_accessible "$testDir"
+}

@@ -1,0 +1,75 @@
+# shellcheck shell=bash
+#
+# Copyright 2025 The Linux Foundation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+#include user/get_groups
+#include core/test/assert_success
+#include core/test/assert_failure
+#include core/test/assert_contains
+#include core/test/prep_step
+
+function user::tests::get_groups::test() {
+  local sudoCommand=""
+  if [[ $EUID -ne 0 ]] && command -v sudo &>/dev/null; then
+    sudoCommand="sudo"
+  fi
+
+  # Test with explicit username
+  core::test::assert_success user::get_groups root
+  local rootGroups
+  rootGroups=$(user::get_groups root)
+  core::test::assert_contains "$rootGroups" "root"
+
+  # Test with no argument (defaults to current user)
+  core::test::assert_success user::get_groups
+  local currentUser
+  currentUser=$(whoami)
+  local groupsWithoutArgument
+  groupsWithoutArgument=$(user::get_groups)
+  local groupsWithArgument
+  groupsWithArgument=$(user::get_groups "$currentUser")
+  core::test::assert_equals "$groupsWithArgument" "$groupsWithoutArgument"
+
+  # Test with $user environment variable
+  local testUser="root"
+  user=$testUser core::test::assert_success user::get_groups
+  user=$testUser core::test::assert_contains "$(user::get_groups)" "root"
+
+  # Test with custom user and single group
+  core::test::prep_step $sudoCommand useradd testuser >/dev/null
+  core::test::assert_success user::get_groups testuser
+  local testuserGroups
+  testuserGroups=$(user::get_groups testuser)
+  core::test::assert_contains "$testuserGroups" "testuser"
+  core::test::prep_step $sudoCommand userdel -r testuser >/dev/null
+
+  # Test with custom user and multiple groups
+  core::test::prep_step $sudoCommand groupadd testgroup1 >/dev/null
+  core::test::prep_step $sudoCommand groupadd testgroup2 >/dev/null
+  core::test::prep_step $sudoCommand useradd -G testgroup1,testgroup2 testuser >/dev/null
+  core::test::assert_success user::get_groups testuser
+  local multiGroupUser
+  multiGroupUser=$(user::get_groups testuser)
+  core::test::assert_contains "$multiGroupUser" "testuser"
+  core::test::assert_contains "$multiGroupUser" "testgroup1"
+  core::test::assert_contains "$multiGroupUser" "testgroup2"
+  core::test::prep_step $sudoCommand userdel -r testuser >/dev/null
+  core::test::prep_step $sudoCommand groupdel testgroup1 >/dev/null
+  core::test::prep_step $sudoCommand groupdel testgroup2 >/dev/null
+
+  # Test with non-existent user
+  core::test::assert_failure user::get_groups non_existent_user
+}

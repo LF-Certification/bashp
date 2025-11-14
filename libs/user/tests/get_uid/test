@@ -15,43 +15,37 @@
 # limitations under the License.
 #
 
-#include user/get_home
+#include user/get_uid
 #include core/test/assert_equals
 #include core/test/assert_success
 #include core/test/assert_failure
 #include core/test/prep_step
 
-function user::tests::get_home::test() {
+function user::tests::get_uid::test() {
   local sudoCommand=""
   if [[ $EUID -ne 0 ]] && command -v sudo &>/dev/null; then
     sudoCommand="sudo"
   fi
 
   # Test with explicit username
-  core::test::assert_success user::get_home root
-  core::test::assert_equals /root "$(user::get_home root)"
+  core::test::assert_success user::get_uid root
+  core::test::assert_equals 0 "$(user::get_uid root)"
 
   # Test with no argument (defaults to current user)
-  core::test::assert_success user::get_home
-  core::test::assert_equals "$HOME" "$(user::get_home)"
+  core::test::assert_success user::get_uid
+  core::test::assert_equals $UID "$(user::get_uid)"
 
   # Test with $user environment variable
   local testUser="root"
-  user=$testUser core::test::assert_success user::get_home
-  user=$testUser core::test::assert_equals /root "$(user::get_home)"
+  user=$testUser core::test::assert_success user::get_uid
+  user=$testUser core::test::assert_equals 0 "$(user::get_uid)"
 
   # Test with custom user
-  core::test::prep_step $sudoCommand useradd -m testuser >/dev/null
-  core::test::assert_success user::get_home testuser
-  core::test::assert_equals /home/testuser "$(user::get_home testuser)"
-  core::test::prep_step $sudoCommand userdel -r testuser >/dev/null
-
-  # Test with custom home directory
-  core::test::prep_step $sudoCommand useradd -m -d /tmp/testuser testuser >/dev/null
-  core::test::assert_success user::get_home testuser
-  core::test::assert_equals /tmp/testuser "$(user::get_home testuser)"
+  core::test::prep_step $sudoCommand useradd -u 5000 testuser >/dev/null
+  core::test::assert_success user::get_uid testuser
+  core::test::assert_equals 5000 "$(user::get_uid testuser)"
   core::test::prep_step $sudoCommand userdel -r testuser >/dev/null
 
   # Test with non-existent user
-  core::test::assert_failure user::get_home non_existent_user
+  core::test::assert_failure user::get_uid non_existent_user
 }

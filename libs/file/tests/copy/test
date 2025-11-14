@@ -1,0 +1,135 @@
+# shellcheck shell=bash
+#
+# Copyright 2025 The Linux Foundation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+#include file/copy
+#include core/test/assert_equals
+#include core/test/assert_success
+#include core/test/assert_contains
+#include core/test/prep_step
+
+function file::tests::copy::test() {
+  if ! command -v sudo &>/dev/null; then
+    apt-get update -qq && apt-get install -y -qq sudo
+  fi
+
+  local sudoCommand=""
+  if [[ $EUID -ne 0 ]] && command -v sudo &>/dev/null; then
+    sudoCommand="sudo"
+  fi
+
+  local sourceFile="/tmp/source_copy_$$"
+  local destDir="/tmp/dest_copy_dir_$$"
+  
+  core::test::prep_step mkdir -p "$destDir"
+  core::test::prep_step echo "test content" > "$sourceFile"
+  core::test::prep_step $sudoCommand chown root:root "$destDir"
+  
+  core::test::assert_success file::copy "$sourceFile" "$destDir/"
+  
+  local copiedFile="$destDir/$(basename "$sourceFile")"
+  core::test::assert_success test -f "$copiedFile"
+  
+  local copiedUser
+  copiedUser=$(stat -c '%U' "$copiedFile")
+  core::test::assert_equals "root" "$copiedUser"
+  
+  local copiedGroup
+  copiedGroup=$(stat -c '%G' "$copiedFile")
+  core::test::assert_equals "root" "$copiedGroup"
+  
+  local copiedContent
+  copiedContent=$(cat "$copiedFile")
+  core::test::assert_contains "$copiedContent" "test content"
+  
+  # Test recursive directory copy
+  local sourceDir="/tmp/source_copy_dir_$$"
+  local destDir2="/tmp/dest_copy_dir2_$$"
+  
+  core::test::prep_step mkdir -p "$sourceDir"/{sub1,sub2}
+  core::test::prep_step mkdir -p "$destDir2"
+  core::test::prep_step touch "$sourceDir"/sub1/file1
+  core::test::prep_step echo "nested content" > "$sourceDir"/sub2/file2
+  core::test::prep_step $sudoCommand chown root:root "$destDir2"
+  
+  core::test::assert_success file::copy "$sourceDir" "$destDir2/" -r
+  
+  local copiedDir="$destDir2/$(basename "$sourceDir")"
+  core::test::assert_success test -d "$copiedDir"
+  core::test::assert_success test -d "$copiedDir/sub1"
+  core::test::assert_success test -f "$copiedDir/sub1/file1"
+  core::test::assert_success test -f "$copiedDir/sub2/file2"
+  
+  local copiedDirUser
+  copiedDirUser=$(stat -c '%U' "$copiedDir")
+  core::test::assert_equals "root" "$copiedDirUser"
+  
+  local copiedSubdirUser
+  copiedSubdirUser=$(stat -c '%U' "$copiedDir/sub1")
+  core::test::assert_equals "root" "$copiedSubdirUser"
+  
+  local copiedFile2User
+  copiedFile2User=$(stat -c '%U' "$copiedDir/sub2/file2")
+  core::test::assert_equals "root" "$copiedFile2User"
+  
+  # Test copy with preserve flag
+  local sourceFile2="/tmp/source_copy2_$$"
+  local destDir3="/tmp/dest_copy_dir3_$$"
+  
+  core::test::prep_step mkdir -p "$destDir3"
+  core::test::prep_step echo "preserve test" > "$sourceFile2"
+  core::test::prep_step chmod 644 "$sourceFile2"
+  core::test::prep_step $sudoCommand chown root:root "$destDir3"
+  
+  core::test::assert_success file::copy "$sourceFile2" "$destDir3/" -p
+  
+  local copiedFile3="$destDir3/$(basename "$sourceFile2")"
+  core::test::assert_success test -f "$copiedFile3"
+  
+  # Test multiple file copies
+  local sourceFile3="/tmp/source_copy3_$$"
+  local sourceFile4="/tmp/source_copy4_$$"
+  local destDir4="/tmp/dest_copy_dir4_$$"
+  
+  core::test::prep_step mkdir -p "$destDir4"
+  core::test::prep_step echo "file3" > "$sourceFile3"
+  core::test::prep_step echo "file4" > "$sourceFile4"
+  core::test::prep_step $sudoCommand chown root:root "$destDir4"
+  
+  core::test::assert_success file::copy "$sourceFile3" "$destDir4/"
+  core::test::assert_success file::copy "$sourceFile4" "$destDir4/"
+  
+  core::test::assert_success test -f "$destDir4/$(basename "$sourceFile3")"
+  core::test::assert_success test -f "$destDir4/$(basename "$sourceFile4")"
+  
+  # Test deeply nested directory copy
+  local deepSource="/tmp/deep_source_$$"
+  local deepDest="/tmp/deep_dest_$$"
+  
+  core::test::prep_step mkdir -p "$deepSource"/a/b/c/d
+  core::test::prep_step mkdir -p "$deepDest"
+  core::test::prep_step touch "$deepSource"/a/b/c/d/deep_file
+  core::test::prep_step $sudoCommand chown root:root "$deepDest"
+  
+  core::test::assert_success file::copy "$deepSource" "$deepDest/" -r
+  
+  local copiedDeep="$deepDest/$(basename "$deepSource")"
+  core::test::assert_success test -f "$copiedDeep/a/b/c/d/deep_file"
+  
+  local copiedDeepFileUser
+  copiedDeepFileUser=$(stat -c '%U' "$copiedDeep/a/b/c/d/deep_file")
+  core::test::assert_equals "root" "$copiedDeepFileUser"
+}
