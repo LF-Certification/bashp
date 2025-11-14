@@ -45,7 +45,6 @@ function core::test::assert_exit_code() {
   set +e
   "$@" &>/dev/null
   local actualCode=$?
-  
   if [[ $restoreExitOnError == true ]]; then
     set -e
   fi
