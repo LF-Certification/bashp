@@ -33,5 +33,5 @@
 #   status (false).
 function file::is_world_executable() {
     local path=${1:?st argument (path) must be set}
-    [[ -n $(find "$path" -perm -005) ]]
+    [[ -n $(find "$path" -maxdepth 0 -perm -005) ]]
 }

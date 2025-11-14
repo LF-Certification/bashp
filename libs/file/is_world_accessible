@@ -15,6 +15,9 @@
 # limitations under the License.
 #
 
+#include file/is_world_readable
+#include file/is_world_executable
+
 # file::is_world_accessible
 # Checks if a file or directory is world-readable and executable.
 #
@@ -40,7 +43,7 @@ function file::is_world_accessible() {
 
     if [[ ! -d "$path" ]]; then
       mode=$(stat -c "%a" "$path")
-      if file::is_world_readable "$path"; then
+      if ! file::is_world_readable "$path"; then
         return 1
       fi
 
