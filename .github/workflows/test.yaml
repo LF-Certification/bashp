@@ -25,7 +25,7 @@ jobs:
       functions: ${{ steps.functions.outputs.matrix }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Get all packages
         id: packages
@@ -82,10 +82,10 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Docker
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Test function
         id: test
@@ -99,11 +99,11 @@ jobs:
           exitCode=$?
           echo "$output"
 
-          if [[ $exitCcode -eq 0 ]]; then
+          if [[ $exitCode -eq 0 ]]; then
             echo "✅ Test passed for ${{ matrix.function.function }}"
-          elif [[ $exitCcode -eq 127 ]]; then
+          elif [[ $exitCode -eq 127 ]]; then
             echo "🔍 No test defined for ${{ matrix.function.function }} (acceptable)"
           else
-            echo "❌ Test failed for ${{ matrix.function.function }} (exit code: $exitCcode)"
+            echo "❌ Test failed for ${{ matrix.function.function }} (exit code: $exitCode)"
             echo "${{ matrix.function.package }}=false" >> $GITHUB_OUTPUT
           fi
